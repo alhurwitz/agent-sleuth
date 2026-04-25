@@ -216,3 +216,12 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# macOS
+.DS_Store
+
+# Claude Code session metadata
+.claude/
+
+# Sleuth runtime cache and per-dir hierarchical index
+.sleuth/
