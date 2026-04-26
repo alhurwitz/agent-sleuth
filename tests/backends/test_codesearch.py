@@ -15,6 +15,7 @@ from sleuth.backends._codesearch._treesitter import (
     SupportedLanguage,
     build_hierarchy,
     expand_hit_to_node,
+    language_for_path,
 )
 from sleuth.backends.base import Capability
 from sleuth.backends.codesearch import CodeSearch
@@ -361,6 +362,117 @@ async def test_codesearch_cancellation(tmp_path: Path) -> None:
     task.cancel()
     with pytest.raises(asyncio.CancelledError):
         await task
+
+
+# ---------------------------------------------------------------------------
+# Additional coverage: language_for_path, JS/TS expansion, unsupported files
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.unit
+def test_language_for_path_python() -> None:
+    """language_for_path returns PYTHON for .py files."""
+    assert language_for_path("app.py") == SupportedLanguage.PYTHON
+
+
+@pytest.mark.unit
+def test_language_for_path_typescript() -> None:
+    """language_for_path returns TYPESCRIPT for .ts/.tsx files."""
+    assert language_for_path("comp.tsx") == SupportedLanguage.TYPESCRIPT
+    assert language_for_path("utils.ts") == SupportedLanguage.TYPESCRIPT
+
+
+@pytest.mark.unit
+def test_language_for_path_javascript() -> None:
+    """language_for_path returns JAVASCRIPT for .js/.mjs/.cjs files."""
+    assert language_for_path("app.js") == SupportedLanguage.JAVASCRIPT
+    assert language_for_path("mod.mjs") == SupportedLanguage.JAVASCRIPT
+
+
+@pytest.mark.unit
+def test_language_for_path_unsupported() -> None:
+    """language_for_path returns None for unsupported extensions."""
+    assert language_for_path("data.json") is None
+    assert language_for_path("README.md") is None
+
+
+JS_SOURCE = """\
+function greetUser(name) {
+    return "Hello, " + name;
+}
+
+class UserService {
+    constructor(db) {
+        this.db = db;
+    }
+}
+"""
+
+
+@pytest.mark.unit
+def test_expand_hit_javascript_function() -> None:
+    """JavaScript function_declaration is expanded correctly."""
+    node = expand_hit_to_node(
+        source=JS_SOURCE,
+        line_number=2,  # inside greetUser body
+        language=SupportedLanguage.JAVASCRIPT,
+    )
+    assert node is not None
+    assert "greetUser" in node.text
+
+
+@pytest.mark.unit
+def test_expand_hit_javascript_class() -> None:
+    """JavaScript class_declaration is expanded correctly."""
+    node = expand_hit_to_node(
+        source=JS_SOURCE,
+        line_number=5,  # class UserService line
+        language=SupportedLanguage.JAVASCRIPT,
+    )
+    assert node is not None
+    assert "UserService" in node.text
+
+
+TS_SOURCE = """\
+interface Config {
+    host: string;
+}
+
+function createConfig(host: string): Config {
+    return { host };
+}
+"""
+
+
+@pytest.mark.unit
+def test_expand_hit_typescript_function() -> None:
+    """TypeScript function is expanded correctly."""
+    node = expand_hit_to_node(
+        source=TS_SOURCE,
+        line_number=6,  # inside createConfig body
+        language=SupportedLanguage.TYPESCRIPT,
+    )
+    assert node is not None
+    assert "createConfig" in node.text
+
+
+@pytest.mark.unit
+async def test_codesearch_searches_js_files(tmp_path: Path) -> None:
+    """CodeSearch finds matches in JavaScript files."""
+    (tmp_path / "api.js").write_text("function handleRequest(req) {\n    return req.body;\n}\n")
+    cs = CodeSearch(path=tmp_path)
+    chunks = await cs.search("handleRequest", k=5)
+    assert len(chunks) >= 1
+    assert any("handleRequest" in c.text for c in chunks)
+
+
+@pytest.mark.unit
+async def test_embedder_rerank_raises_without_extra() -> None:
+    """Embedder.rerank raises ImportError when rerank=True and code-embed not installed."""
+    embedder = Embedder(rerank=True)
+    chunk = _make_chunk("some code", 1)
+    with pytest.raises(ImportError):
+        await embedder.rerank("query", [chunk])
 
 
 # ---------------------------------------------------------------------------
