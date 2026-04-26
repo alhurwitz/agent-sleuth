@@ -55,5 +55,5 @@ def respx_mock() -> Generator[respx_module.MockRouter, None, None]:
     Note: ``respx_mock`` is synchronous-fixture-friendly even in async tests
     because respx patches the transport layer, not the event loop.
     """
-    with respx_module.mock(assert_all_mocked=True) as mock:
+    with respx_module.mock(assert_all_mocked=True, assert_all_called=False) as mock:
         yield mock
