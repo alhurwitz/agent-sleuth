@@ -1,0 +1,54 @@
+# .github/workflows/release.yml
+# Triggers: signed v* tag pushed to main.
+# Builds via uv build, publishes to PyPI via Trusted Publisher (OIDC),
+# creates GitHub release with auto-generated CHANGELOG via git-cliff.
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write       # create GitHub release
+  id-token: write       # OIDC for PyPI Trusted Publisher
+
+jobs:
+  release:
+    name: Build and publish
+    runs-on: ubuntu-latest
+    environment: release
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0   # needed for git-cliff to walk full history
+
+      - uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+
+      - run: uv sync --frozen --group dev
+
+      - name: Build wheel and sdist
+        run: uv build
+
+      - name: Generate CHANGELOG for this release
+        uses: orhun/git-cliff-action@v4
+        with:
+          config: cliff.toml
+          args: --latest --strip header
+        env:
+          OUTPUT: RELEASE_NOTES.md
+          GITHUB_REPO: ${{ github.repository }}
+
+      - name: Publish to PyPI (OIDC — no token required)
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          packages-dir: dist/
+
+      - name: Create GitHub release
+        uses: softprops/action-gh-release@v2
+        with:
+          body_path: RELEASE_NOTES.md
+          files: dist/*
+          make_latest: true
