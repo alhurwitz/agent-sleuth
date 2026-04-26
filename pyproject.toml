@@ -73,6 +73,11 @@ dev = [
     "commitizen>=3.27",
     "detect-secrets>=1.5",
     "pip-audit>=2.7",
+    "anthropic>=0.97.0",
+    "openai>=2.32.0",
+    "exa-py>=1.0",
+    "trafilatura>=1.7",
+    "tiktoken>=0.7",
 ]
 
 [project.scripts]
@@ -101,6 +106,19 @@ mypy_path = "src"
 [[tool.mypy.overrides]]
 module = "tests.*"
 disallow_untyped_defs = false
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = [
+    "aiosqlite",
+    "fastembed",
+    "numpy",
+    "anthropic", "anthropic.*",
+    "openai", "openai.*",
+    "trafilatura", "trafilatura.*",
+    "exa_py", "exa_py.*",
+    "tiktoken", "tiktoken.*",
+]
 ignore_missing_imports = true
 
 [tool.pytest.ini_options]

@@ -116,10 +116,13 @@ web-fetch = [
 
 [package.dev-dependencies]
 dev = [
+    { name = "anthropic" },
     { name = "commitizen" },
     { name = "detect-secrets" },
+    { name = "exa-py" },
     { name = "hypothesis" },
     { name = "mypy" },
+    { name = "openai" },
     { name = "pip-audit" },
     { name = "pre-commit" },
     { name = "pytest" },
@@ -130,6 +133,8 @@ dev = [
     { name = "respx" },
     { name = "ruff" },
     { name = "syrupy" },
+    { name = "tiktoken" },
+    { name = "trafilatura" },
 ]
 
 [package.metadata]
@@ -176,10 +181,13 @@ provides-extras = ["anthropic", "openai", "langchain", "langgraph", "llamaindex"
 
 [package.metadata.requires-dev]
 dev = [
+    { name = "anthropic", specifier = ">=0.97.0" },
     { name = "commitizen", specifier = ">=3.27" },
     { name = "detect-secrets", specifier = ">=1.5" },
+    { name = "exa-py", specifier = ">=1.0" },
     { name = "hypothesis", specifier = ">=6.100" },
     { name = "mypy", specifier = ">=1.11" },
+    { name = "openai", specifier = ">=2.32.0" },
     { name = "pip-audit", specifier = ">=2.7" },
     { name = "pre-commit", specifier = ">=3.7" },
     { name = "pytest", specifier = ">=8.0" },
@@ -190,6 +198,8 @@ dev = [
     { name = "respx", specifier = ">=0.21" },
     { name = "ruff", specifier = ">=0.6" },
     { name = "syrupy", specifier = ">=4.6" },
+    { name = "tiktoken", specifier = ">=0.7" },
+    { name = "trafilatura", specifier = ">=1.7" },
 ]
 
 [[package]]

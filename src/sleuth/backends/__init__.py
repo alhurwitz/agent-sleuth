@@ -1,4 +1,17 @@
 from sleuth.backends.codesearch import CodeSearch
-from sleuth.backends.web import TavilyBackend as Tavily
+from sleuth.backends.web import BraveBackend as BraveBackend
+from sleuth.backends.web import ExaBackend as ExaBackend
+from sleuth.backends.web import SerpAPIBackend as SerpAPIBackend
+from sleuth.backends.web import TavilyBackend as Tavily  # backwards-compat alias
+from sleuth.backends.web import TavilyBackend as TavilyBackend
+from sleuth.backends.web import WebBackend as WebBackend
 
-__all__ = ["CodeSearch", "Tavily"]
+__all__ = [
+    "BraveBackend",
+    "CodeSearch",
+    "ExaBackend",
+    "SerpAPIBackend",
+    "Tavily",
+    "TavilyBackend",
+    "WebBackend",
+]
