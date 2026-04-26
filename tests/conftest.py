@@ -6,7 +6,8 @@ Fixture inventory (Phase 0):
   - respx_mock:   respx mock transport active for the test (async-safe)
 
 Phase 1 adds:
-  - stub_llm:     a StubLLM instance with a default "hello" response
+  - stub_llm:     a StubLLM instance with a default "answer" response
+  - fake_backend: a minimal in-memory Backend for engine/integration tests
 """
 
 from __future__ import annotations
@@ -16,6 +17,10 @@ from pathlib import Path
 
 import pytest
 import respx as respx_module
+
+from sleuth.backends.base import Capability
+from sleuth.llm.stub import StubLLM
+from sleuth.types import Chunk, Source
 
 
 @pytest.fixture
@@ -57,3 +62,34 @@ def respx_mock() -> Generator[respx_module.MockRouter, None, None]:
     """
     with respx_module.mock(assert_all_mocked=True, assert_all_called=False) as mock:
         yield mock
+
+
+# ---------------------------------------------------------------------------
+# Phase 1 additions — stub_llm + fake_backend cross-cutting fixtures
+# ---------------------------------------------------------------------------
+
+
+@pytest.fixture
+def stub_llm() -> StubLLM:
+    """StubLLM with a single 'answer' response — suitable for most unit tests."""
+    return StubLLM(["answer"])
+
+
+class _FakeBackend:
+    name = "fake"
+    capabilities: frozenset[Capability] = frozenset({Capability.WEB})
+
+    async def search(self, query: str, k: int = 10) -> list[Chunk]:
+        return [
+            Chunk(
+                text="fake result",
+                source=Source(kind="url", location="https://fake.example.com"),
+                score=1.0,
+            )
+        ]
+
+
+@pytest.fixture
+def fake_backend() -> _FakeBackend:
+    """Minimal in-memory Backend for use in engine and integration tests."""
+    return _FakeBackend()
