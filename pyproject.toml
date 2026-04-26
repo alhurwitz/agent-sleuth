@@ -23,7 +23,7 @@ langgraph     = ["langgraph>=0.2"]
 llamaindex    = ["llama-index-core>=0.11"]
 openai-agents = ["openai-agents>=0.1"]
 claude-agent  = ["claude-agent-sdk>=0.1"]
-pydantic-ai   = ["pydantic-ai>=0.0.13"]
+pydantic-ai   = ["pydantic-ai>=1.56.0"]
 crewai        = ["crewai>=0.80"]
 autogen       = ["pyautogen>=0.3"]
 
