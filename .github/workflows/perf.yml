@@ -1,0 +1,34 @@
+# .github/workflows/perf.yml
+# Triggers: pull_request to develop or main.
+# Measures end-to-end latency + RunStats.first_token_ms.
+# Fails if first-token median > 1500 ms on fast path or p50/p95 regress >10%.
+name: Performance regression
+
+on:
+  pull_request:
+    branches: [develop, main]
+
+jobs:
+  perf:
+    name: Performance regression suite
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # fetch develop baseline for comparison
+          fetch-depth: 0
+      - uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+      - run: uv sync --frozen --group dev
+      - name: Run perf suite
+        run: |
+          uv run pytest -m perf \
+            --benchmark-json=perf-results.json \
+            --benchmark-min-rounds=5 \
+            -v
+      - name: Upload benchmark results
+        uses: actions/upload-artifact@v4
+        with:
+          name: perf-results-${{ github.sha }}
+          path: perf-results.json
