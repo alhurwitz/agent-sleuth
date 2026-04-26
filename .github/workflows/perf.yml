@@ -13,7 +13,7 @@ jobs:
     name: Performance regression suite
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           # fetch develop baseline for comparison
           fetch-depth: 0
