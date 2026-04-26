@@ -99,6 +99,9 @@ ignore_missing_imports = true
 
 [[tool.mypy.overrides]]
 module = [
+    "aiosqlite",
+    "fastembed",
+    "numpy",
     "anthropic", "anthropic.*",
     "openai", "openai.*",
     "trafilatura", "trafilatura.*",
