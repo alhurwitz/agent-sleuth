@@ -93,7 +93,7 @@ disallow_untyped_defs = false
 ignore_missing_imports = true
 
 [[tool.mypy.overrides]]
-module = ["aiosqlite", "fastembed"]
+module = ["aiosqlite", "fastembed", "numpy"]
 ignore_missing_imports = true
 
 [tool.pytest.ini_options]
