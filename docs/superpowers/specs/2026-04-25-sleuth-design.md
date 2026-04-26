@@ -23,12 +23,15 @@ Sleuth is a Python package that gives any agentic application a fast, plug-and-p
 5. **Cited and structured.** Every answer carries citations to real sources. Optional Pydantic schema for structured output.
 6. **BYOK LLM.** No model SDK is a hard dependency. The user passes any LLM client conforming to the `LLMClient` protocol.
 
-### Non-goals (initial release)
+### Non-goals
 
-- Owning a web crawler, web index, or competing with Tavily/Exa on web search quality.
-- Long-term vector memory of conversations.
-- Built-in fine-tuning, training, or evaluation pipelines.
-- A hosted service. Sleuth is a library; the MCP server is meant to be run by the user.
+Sleuth is not, and is unlikely to ever become:
+
+- Its own web crawler / index / search-quality competitor to Tavily/Exa/Brave/SerpAPI.
+- A hosted SaaS. Sleuth is a library; the MCP server is run by the user.
+- A training/fine-tuning framework.
+
+A separate "deferred to future work" list lives in §14 — those items are plausible v2+ extensions, not permanent non-goals.
 
 ---
 
@@ -94,6 +97,13 @@ Rationale: `sleuth` is taken on PyPI by an unrelated abandoned package; the `age
 4. **Streaming all the way down.** The synthesizer yields tokens; citations stream as sources resolve; cache hits replay through the same stream.
 5. **No hidden global state.** All caches and sessions are explicit objects passed by the user.
 
+### Observability surfaces
+
+The event stream is the primary surface and is sufficient for most users. In addition:
+
+- **Logging.** The engine and built-in backends log via stdlib `logging` under the `sleuth` namespace (`sleuth.engine`, `sleuth.backends.web`, etc.). No handlers are configured by default; consumers wire them up themselves.
+- **Metrics / traces.** Not in v1. An OpenTelemetry adapter is deferred to v2+ (§14). Until then, `RunStats` in `DoneEvent` carries the latency / token / cache numbers needed for ad-hoc dashboards.
+
 ---
 
 ## 4. Public API
@@ -138,8 +148,8 @@ result = agent.ask("...", schema=Verdict)   # result.data is a Verdict
 
 # Multi-turn session
 session = Session()
-agent.ask("Who is the CTO of Anthropic?", session=session)
-agent.ask("What did they work on before?", session=session)
+agent.ask("Who maintains the auth middleware?", session=session)
+agent.ask("What changed in their last commit?", session=session)
 
 # Depth override
 agent.ask("...", depth="fast")              # skip planning, single fan-out
@@ -161,9 +171,10 @@ Every run emits a typed, ordered stream of events. Cached runs emit the same eve
 
 ```python
 class RouteEvent(BaseModel):    type: Literal["route"]; depth: Depth; reason: str
+class PlanStep(BaseModel):      query: str; backends: list[str] | None = None; done: bool = False
 class PlanEvent(BaseModel):     type: Literal["plan"]; steps: list[PlanStep]
-class SearchEvent(BaseModel):   type: Literal["search"]; backend: str; query: str
-class FetchEvent(BaseModel):    type: Literal["fetch"]; url: str; status: int
+class SearchEvent(BaseModel):   type: Literal["search"]; backend: str; query: str; error: str | None = None
+class FetchEvent(BaseModel):    type: Literal["fetch"]; url: str; status: int; error: str | None = None
 class ThinkingEvent(BaseModel): type: Literal["thinking"]; text: str
 class TokenEvent(BaseModel):    type: Literal["token"]; text: str
 class CitationEvent(BaseModel): type: Literal["citation"]; index: int; source: Source
@@ -200,17 +211,43 @@ class Chunk(BaseModel):
 
 class RunStats(BaseModel):
     latency_ms: int
+    first_token_ms: int | None        # null on cache hit
     tokens_in: int
     tokens_out: int
     cache_hits: dict[str, int]
     backends_called: list[str]
 
-class Result(BaseModel):
+T = TypeVar("T", bound=BaseModel)
+
+class Result(BaseModel, Generic[T]):
     text: str
     citations: list[Source]
-    data: BaseModel | None = None     # populated when schema= is passed
+    data: T | None = None             # populated when schema= is passed
     stats: RunStats
 ```
+
+`agent.ask(...)` returns `Result[None]`; `agent.ask(..., schema=Verdict)` returns `Result[Verdict]` so callers keep static typing on `result.data`.
+
+### LLMClient protocol
+
+The package never imports a model SDK as a hard dep; users (or the optional `sleuth.llm` shims) supply any object satisfying:
+
+```python
+class LLMClient(Protocol):
+    name: str                          # "anthropic:claude-sonnet-4-6", etc.
+    supports_reasoning: bool           # gates ThinkingEvent emission
+    supports_structured_output: bool   # gates schema= passthrough vs. fallback parse
+
+    async def stream(
+        self,
+        messages: list[Message],
+        *,
+        schema: type[BaseModel] | None = None,
+        tools: list[Tool] | None = None,
+    ) -> AsyncIterator[LLMChunk]: ...
+```
+
+`LLMChunk` is a small union covering `TextDelta`, `ReasoningDelta`, `ToolCall`, and `Stop`. Shims in `sleuth.llm.{anthropic,openai}` adapt the respective SDK streams to this shape.
 
 Public + serialized data shapes are Pydantic v2. Internal-only structs (planner state, executor scratch) stay as `@dataclass`/`attrs` to keep hot paths cheap.
 
@@ -221,14 +258,29 @@ Public + serialized data shapes are Pydantic v2. Internal-only structs (planner 
 ### 7.1 Backend protocol
 
 ```python
+class Capability(StrEnum):
+    WEB = "web"        # general web search
+    DOCS = "docs"      # local document corpora
+    CODE = "code"      # source code
+    FRESH = "fresh"    # results that reflect "now" (news, prices, status)
+    PRIVATE = "private"  # auth-gated systems (Notion, Linear, Slack, etc.)
+
 class Backend(Protocol):
     name: str
-    capabilities: frozenset[Capability]   # {WEB, DOCS, CODE, FRESH, ...}
+    capabilities: frozenset[Capability]
 
     async def search(self, query: str, k: int = 10) -> list[Chunk]: ...
 ```
 
 Capabilities tell the planner which backends are eligible for a given sub-query. Multiple matching backends fan out in parallel via `asyncio.gather`; results are merged and de-duplicated by source.
+
+### Failure handling
+
+Every backend call is wrapped in a per-backend timeout (configurable, default 8s for web, 4s for local). On timeout or exception, the engine emits a `SearchEvent` with `error=...` set, drops that backend from the merge, and continues with whatever else returned. The synthesizer is told which backends contributed; if *every* backend fails the run ends with a `DoneEvent` whose `stats.backends_called` is empty and whose `text` explains the partial failure. There is no retry inside the engine — backend adapters do their own retry/backoff and decide when to surface failure.
+
+### Cancellation
+
+The event stream is the cancellation surface. If the consumer stops iterating (or the task is cancelled), the engine propagates `asyncio.CancelledError` into the executor, which in turn cancels in-flight backend tasks and the synthesizer. Backends MUST honor cancellation — `BackendTestKit` includes a cancellation-safety case. No partial result is committed to the cache on cancel.
 
 ### 7.2 WebBackend
 
@@ -238,7 +290,9 @@ Capabilities tell the planner which backends are eligible for a given sub-query.
 
 ### 7.3 LocalFiles (hierarchical, default local backend — no vectors)
 
-PageIndex-style: build a tree-of-contents per document during indexing; navigate the tree with the LLM at query time.
+PageIndex-style[^pageindex]: build a tree-of-contents per document during indexing; navigate the tree with the LLM at query time.
+
+[^pageindex]: PageIndex (VectifyAI, 2024): https://github.com/VectifyAI/PageIndex — reasoning-based document indexing that replaces vector chunking with an LLM-navigated table of contents.
 
 ```
 Indexing (one-time + incremental on file change)
@@ -249,7 +303,7 @@ Indexing (one-time + incremental on file change)
                  root → section → subsection → leaf chunk
            → LLM writes a short summary at each non-leaf node
                  (one fast-LLM call per doc, roughly)
-           → persist to .sleuth/index/<hash>.json + .sqlite
+           → persist under <indexed-dir>/.sleuth/index/<hash>.{json,sqlite}
 
 Query (fast, cited)
   receive query
@@ -268,7 +322,7 @@ class LocalFiles(Backend):
         indexer_llm: LLMClient | None = None,    # for tree summaries
         navigator_llm: LLMClient | None = None,  # for branch selection
         include: list[str] = ["**/*"],
-        exclude: list[str] = [".git/**", "node_modules/**", ".sleuth/**", ...],
+        exclude: list[str] = DEFAULT_EXCLUDES,   # .git, node_modules, .sleuth, .venv, dist, build, etc.
         max_branch_descent: int = 3,
         rebuild: Literal["mtime", "hash", "always"] = "mtime",
     ): ...
@@ -328,8 +382,10 @@ Three explicit, swappable layers. None are global; every cache is an object.
 │  Cache (transparent dedup, on by default)               │
 │   - QueryCache:  (query_hash, backend_set, depth) → Result │
 │   - FetchCache:  url/file → parsed content              │
-│   - IndexCache:  hierarchical tree per LocalFiles dir   │
 │   - PlanCache:   (query_hash, tree_version) → plan      │
+│  IndexCache is per-corpus and lives next to the data    │
+│  (under <indexed-dir>/.sleuth/), not in the user-home   │
+│  cache. The other three live under ~/.sleuth/cache/.    │
 └─────────────────────────────────────────────────────────┘
                          ↓ optional layer in front
 ┌─────────────────────────────────────────────────────────┐
@@ -344,11 +400,12 @@ Three explicit, swappable layers. None are global; every cache is an object.
 
 - Every cache lookup is async (`async def get/set` on the `Cache` protocol).
 - Cache hits replay through the same event stream, prefixed with `CacheHitEvent`.
-- Sessions update at end-of-turn; the `DoneEvent` is emitted first, the session write happens in a background task and is awaited only on the next `agent.ask`.
+- Sessions update at end-of-turn; the `DoneEvent` is emitted first, the session write happens in a background task and is awaited only on the next `agent.ask`. Users who need the write to complete sooner can call `await session.flush()`.
 
 ### Defaults
 
-- `Cache`: SQLite-backed, on disk at `~/.sleuth/cache/`, per-namespace TTL (`query=10min`, `fetch=24h`, `index=∞`).
+- `Cache`: SQLite-backed at `~/.sleuth/cache/{query,fetch,plan}.sqlite`, per-namespace TTL (`query=10min`, `fetch=24h`, `plan=1h`).
+- `IndexCache`: lives per-corpus at `<indexed-dir>/.sleuth/index/`, no TTL. Invalidation is by file mtime/hash per `LocalFiles(rebuild=...)`.
 - `SemanticCache`: off. When enabled, threshold defaults to 0.92 cosine similarity, 10-minute window.
 - `Session`: in-memory ring buffer, default 20 turns. Not vector-backed — that's a future feature.
 
@@ -383,6 +440,7 @@ Three explicit, swappable layers. None are global; every cache is an object.
 5. Configure branch protection on `main` and `develop` (PR + green CI required).
 6. Add `CONTRIBUTING.md` documenting the flow.
 7. Configure PyPI Trusted Publisher (OIDC) for release. (See §16.8.)
+8. Register a maintainer GPG / SSH signing key on the repo so signed-tag releases (§16.8) don't block on day-of bootstrap.
 
 ---
 
@@ -409,8 +467,8 @@ Each is its own optional install: `pip install agent-sleuth[langchain]`, etc. Co
 
 Adapter tiers (decides maintenance burden):
 
-- **Tier 1 (full support):** LangChain, MCP, Claude Agent SDK.
-- **Tier 2 (best-effort):** the rest.
+- **Tier 1 (full support):** LangChain, Claude Agent SDK. Plus the MCP server (a frontend, not a framework adapter — see §10.3).
+- **Tier 2 (best-effort):** LangGraph, LlamaIndex, OpenAI Agents SDK, Pydantic AI, CrewAI, AutoGen.
 
 ### 10.3 MCP server
 
@@ -458,25 +516,32 @@ Speed budget comes entirely from architecture (LLM is BYOK). The package keeps t
 
 ---
 
-## 14. Out of scope (future work)
+## 14. Deferred to future work
+
+In scope for v2+ but explicitly not v1. May graduate as user demand or design clarity warrants:
 
 - Vector-backed `Session` memory for multi-thousand-turn conversations.
 - A built-in evaluation harness (correctness, faithfulness, citation accuracy).
+- Long-term vector memory of conversations across sessions.
 - Fine-tuning the navigator LLM on user-specific corpora.
-- A hosted SaaS frontend.
-- Multi-modal (image/audio/video) document indexing.
+- Multi-modal (image / audio / video) document indexing.
+
+For things Sleuth will *never* build, see §1 Non-goals.
 
 ---
 
 ## 15. Open questions to resolve before / during implementation
 
-These were not fully nailed down in brainstorming and should be settled in the implementation plan or first PR:
+### Resolved
 
-1. Project layout: single package `sleuth/` vs. namespace `sleuth.core` + adapter packages. Recommendation: single package with optional-dep adapters; revisit if the install matrix gets unwieldy.
-2. PDF parser choice for LocalFiles indexing (`pypdf`, `pdfplumber`, `pymupdf`). Need to benchmark for both speed and TOC fidelity.
-3. Default `fast_llm` recommendation: do we ship `Anthropic("claude-haiku-4-5")` as a literal default, or just document the recommendation? Leaning toward documentation-only to keep BYOK pure.
-4. Whether `WebBackend` should ship a single unified provider with `provider="tavily"` etc., or one class per provider. Recommendation: factory function + per-provider class for power users.
-5. MCP server config format: YAML, TOML, or both. Recommendation: TOML to match `pyproject.toml`.
+1. ~~Project layout: single package `sleuth/` vs. namespace `sleuth.core` + adapter packages.~~ **Decided 2026-04-25:** single package `src/sleuth/` with optional-dep adapters under `agent-sleuth[<framework>]` extras.
+
+### Still open
+
+2. PDF parser choice for LocalFiles indexing (`pypdf`, `pdfplumber`, `pymupdf`). Need to benchmark for both speed and TOC fidelity. Settle in Phase 2 (LocalFiles plan).
+3. Default `fast_llm` recommendation: do we ship `Anthropic("claude-haiku-4-5")` as a literal default, or just document the recommendation? Leaning toward documentation-only to keep BYOK pure. Settle in Phase 1 (Core MVP plan).
+4. Whether `WebBackend` should ship a single unified provider with `provider="tavily"` etc., or one class per provider. Recommendation: factory function + per-provider class for power users. Settle in Phase 9 (Web provider shims plan).
+5. MCP server config format: YAML, TOML, or both. Recommendation: TOML to match `pyproject.toml`. Settle in Phase 8 (MCP server plan).
 
 ---
 
@@ -545,7 +610,7 @@ Test markers:
 
 - **`ci.yml`** — runs on every push and PR. Steps: `uv sync --frozen --all-extras --group dev` → ruff → mypy → unit + contract tests → coverage upload. Matrix: Python 3.11, 3.12, 3.13 on `ubuntu-latest` + `macos-latest`.
 - **`integration.yml`** — nightly cron + manual dispatch. Runs `pytest -m integration` against real APIs using repo secrets.
-- **`perf.yml`** — runs on PR. Fails if p50 or p95 regress >10% vs `develop` baseline.
+- **`perf.yml`** — runs on PR. Measures end-to-end latency *and* `RunStats.first_token_ms` (median of 5 runs to dampen noise). Fails if first-token median > 1500 ms on the fast path or if p50/p95 regress >10% vs `develop` baseline.
 - **`release.yml`** — triggered on `v*` tag pushed to `main`. Builds via `uv build`, publishes to PyPI via Trusted Publisher (OIDC, no long-lived tokens), creates GitHub release with auto-generated CHANGELOG.
 
 ### 16.7 Dependency hygiene and security
@@ -565,5 +630,5 @@ Test markers:
 - `uv.lock` checked in.
 - `.python-version` checked in.
 - All CI uses `uv sync --frozen`.
-- Determinism in tests: `StubLLM` for engine tests; `responses`/`respx` for HTTP mocking; fixed seeds where randomness is allowed.
+- Determinism in tests: `StubLLM` for engine tests; `respx` for HTTP mocking (async-first, plays well with `httpx`); fixed seeds where randomness is allowed.
 - Library consumers get flexible version ranges in `pyproject.toml`; we never hard-pin transitive deps for them.
