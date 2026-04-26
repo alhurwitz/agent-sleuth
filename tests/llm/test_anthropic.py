@@ -400,6 +400,30 @@ class TestAnthropicEdgeCases:
         result = _translate_event(event)
         assert result is None
 
+    def test_stop_reason_stop_sequence(self) -> None:
+        """_translate_event returns Stop(stop_sequence) for stop_sequence stop reason."""
+        from sleuth.llm.anthropic import _translate_event
+        from sleuth.llm.base import Stop
+
+        event = MagicMock()
+        event.type = "message_delta"
+        event.delta = MagicMock()
+        event.delta.stop_reason = "stop_sequence"
+        result = _translate_event(event)
+        assert isinstance(result, Stop)
+        assert result.reason == "stop_sequence"
+
+    def test_input_json_delta_returns_none(self) -> None:
+        """_translate_event returns None for input_json_delta (partial tool JSON)."""
+        from sleuth.llm.anthropic import _translate_event
+
+        event = MagicMock()
+        event.type = "content_block_delta"
+        event.delta = MagicMock()
+        event.delta.type = "input_json_delta"
+        result = _translate_event(event)
+        assert result is None
+
 
 # ---------------------------------------------------------------------------
 # Task 10: Protocol conformance
