@@ -62,4 +62,6 @@ jobs:
         with:
           enable-cache: true
       - run: uv sync --frozen --group dev
-      - run: uv run pip-audit --strict
+      # --skip-editable so pip-audit doesn't try to look up agent-sleuth itself
+      # on PyPI before the first release; --strict still applies to the rest.
+      - run: uv run pip-audit --strict --skip-editable
