@@ -21,13 +21,24 @@ jobs:
         with:
           enable-cache: true
       - run: uv sync --frozen --group dev
+      - name: Check for perf tests
+        id: has_perf
+        run: |
+          if find tests/perf -name "test_*.py" 2>/dev/null | grep -q .; then
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "exists=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::No perf tests yet (Phase 11 will populate tests/perf/). Skipping benchmark run."
+          fi
       - name: Run perf suite
+        if: steps.has_perf.outputs.exists == 'true'
         run: |
           uv run pytest -m perf \
             --benchmark-json=perf-results.json \
             --benchmark-min-rounds=5 \
             -v
       - name: Upload benchmark results
+        if: steps.has_perf.outputs.exists == 'true'
         uses: actions/upload-artifact@v4
         with:
           name: perf-results-${{ github.sha }}
