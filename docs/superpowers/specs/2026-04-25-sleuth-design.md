@@ -171,9 +171,10 @@ Every run emits a typed, ordered stream of events. Cached runs emit the same eve
 
 ```python
 class RouteEvent(BaseModel):    type: Literal["route"]; depth: Depth; reason: str
+class PlanStep(BaseModel):      query: str; backends: list[str] | None = None; done: bool = False
 class PlanEvent(BaseModel):     type: Literal["plan"]; steps: list[PlanStep]
-class SearchEvent(BaseModel):   type: Literal["search"]; backend: str; query: str
-class FetchEvent(BaseModel):    type: Literal["fetch"]; url: str; status: int
+class SearchEvent(BaseModel):   type: Literal["search"]; backend: str; query: str; error: str | None = None
+class FetchEvent(BaseModel):    type: Literal["fetch"]; url: str; status: int; error: str | None = None
 class ThinkingEvent(BaseModel): type: Literal["thinking"]; text: str
 class TokenEvent(BaseModel):    type: Literal["token"]; text: str
 class CitationEvent(BaseModel): type: Literal["citation"]; index: int; source: Source
@@ -531,13 +532,16 @@ For things Sleuth will *never* build, see §1 Non-goals.
 
 ## 15. Open questions to resolve before / during implementation
 
-These were not fully nailed down in brainstorming and should be settled in the implementation plan or first PR:
+### Resolved
 
-1. Project layout: single package `sleuth/` vs. namespace `sleuth.core` + adapter packages. Recommendation: single package with optional-dep adapters; revisit if the install matrix gets unwieldy.
-2. PDF parser choice for LocalFiles indexing (`pypdf`, `pdfplumber`, `pymupdf`). Need to benchmark for both speed and TOC fidelity.
-3. Default `fast_llm` recommendation: do we ship `Anthropic("claude-haiku-4-5")` as a literal default, or just document the recommendation? Leaning toward documentation-only to keep BYOK pure.
-4. Whether `WebBackend` should ship a single unified provider with `provider="tavily"` etc., or one class per provider. Recommendation: factory function + per-provider class for power users.
-5. MCP server config format: YAML, TOML, or both. Recommendation: TOML to match `pyproject.toml`.
+1. ~~Project layout: single package `sleuth/` vs. namespace `sleuth.core` + adapter packages.~~ **Decided 2026-04-25:** single package `src/sleuth/` with optional-dep adapters under `agent-sleuth[<framework>]` extras.
+
+### Still open
+
+2. PDF parser choice for LocalFiles indexing (`pypdf`, `pdfplumber`, `pymupdf`). Need to benchmark for both speed and TOC fidelity. Settle in Phase 2 (LocalFiles plan).
+3. Default `fast_llm` recommendation: do we ship `Anthropic("claude-haiku-4-5")` as a literal default, or just document the recommendation? Leaning toward documentation-only to keep BYOK pure. Settle in Phase 1 (Core MVP plan).
+4. Whether `WebBackend` should ship a single unified provider with `provider="tavily"` etc., or one class per provider. Recommendation: factory function + per-provider class for power users. Settle in Phase 9 (Web provider shims plan).
+5. MCP server config format: YAML, TOML, or both. Recommendation: TOML to match `pyproject.toml`. Settle in Phase 8 (MCP server plan).
 
 ---
 

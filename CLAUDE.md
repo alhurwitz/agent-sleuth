@@ -65,7 +65,7 @@ The spec is structured so this file doesn't need to repeat it. When you need det
 | Open questions to resolve | spec §15 |
 | Tooling, dev environment, release automation | spec §16 |
 | Bootstrap PR scope (first feature branch) | spec §9 "Initial setup actions" + §16 |
-| Planned repo layout | spec §15 open question 1 (not yet decided) |
+| Repo layout | single package `src/sleuth/` with optional-dep adapters (spec §15 #1, decided 2026-04-25) |
 
 ## Common dev commands (once bootstrapped — `pyproject.toml` doesn't exist yet)
 
