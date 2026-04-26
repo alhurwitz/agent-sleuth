@@ -1,6 +1,6 @@
 # Phase 1: Core MVP — Implementation Plan
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [x]`) syntax for tracking.
 
 **Goal:** Build the foundational types, protocols, engine, and minimal Tavily backend so that `agent.aask("...")` runs end-to-end and emits the full typed event stream.
 
@@ -23,7 +23,7 @@
 **Files:**
 - None created
 
-- [ ] **Step 0.1: Verify Phase 0 artifacts exist**
+- [x] **Step 0.1: Verify Phase 0 artifacts exist**
 
 ```bash
 # Run from repo root
@@ -32,7 +32,7 @@ ls pyproject.toml src/sleuth/__init__.py tests/conftest.py
 
 Expected: all three files exist. If any are missing, Phase 0 must be executed first.
 
-- [ ] **Step 0.2: Cut feature branch**
+- [x] **Step 0.2: Cut feature branch**
 
 ```bash
 git checkout develop
@@ -50,7 +50,7 @@ Expected: you are now on `feature/phase-1-core-mvp`.
 - Create: `src/sleuth/errors.py`
 - Test: `tests/test_errors.py`
 
-- [ ] **Step 1.1: Write the failing test**
+- [x] **Step 1.1: Write the failing test**
 
 Create `tests/test_errors.py`:
 
@@ -86,7 +86,7 @@ def test_errors_carry_message():
         assert str(e) == "msg"
 ```
 
-- [ ] **Step 1.2: Run test to verify it fails**
+- [x] **Step 1.2: Run test to verify it fails**
 
 ```bash
 uv run pytest tests/test_errors.py -v
@@ -94,7 +94,7 @@ uv run pytest tests/test_errors.py -v
 
 Expected: `ImportError: cannot import name 'SleuthError' from 'sleuth.errors'` (module doesn't exist yet).
 
-- [ ] **Step 1.3: Implement `src/sleuth/errors.py`**
+- [x] **Step 1.3: Implement `src/sleuth/errors.py`**
 
 ```python
 """Sleuth exception hierarchy.
@@ -127,7 +127,7 @@ class ConfigError(SleuthError):
     """Agent or backend was misconfigured."""
 ```
 
-- [ ] **Step 1.4: Run test to verify it passes**
+- [x] **Step 1.4: Run test to verify it passes**
 
 ```bash
 uv run pytest tests/test_errors.py -v
@@ -135,7 +135,7 @@ uv run pytest tests/test_errors.py -v
 
 Expected: 3 tests PASS.
 
-- [ ] **Step 1.5: Commit**
+- [x] **Step 1.5: Commit**
 
 ```bash
 git add src/sleuth/errors.py tests/test_errors.py
@@ -150,7 +150,7 @@ git commit -m "feat: add SleuthError hierarchy (BackendError, LLMError, CacheErr
 - Create: `src/sleuth/logging.py`
 - Test: `tests/test_logging.py`
 
-- [ ] **Step 2.1: Write the failing test**
+- [x] **Step 2.1: Write the failing test**
 
 Create `tests/test_logging.py`:
 
@@ -176,7 +176,7 @@ def test_root_logger_has_no_handlers_by_default():
     assert root.handlers == []
 ```
 
-- [ ] **Step 2.2: Run test to verify it fails**
+- [x] **Step 2.2: Run test to verify it fails**
 
 ```bash
 uv run pytest tests/test_logging.py -v
@@ -184,7 +184,7 @@ uv run pytest tests/test_logging.py -v
 
 Expected: `ImportError: cannot import name 'get_logger' from 'sleuth.logging'`.
 
-- [ ] **Step 2.3: Implement `src/sleuth/logging.py`**
+- [x] **Step 2.3: Implement `src/sleuth/logging.py`**
 
 ```python
 """Logging helpers for the sleuth package.
@@ -212,7 +212,7 @@ def get_logger(name: str) -> logging.Logger:
     return logging.getLogger(f"sleuth.{name}")
 ```
 
-- [ ] **Step 2.4: Run test to verify it passes**
+- [x] **Step 2.4: Run test to verify it passes**
 
 ```bash
 uv run pytest tests/test_logging.py -v
@@ -220,7 +220,7 @@ uv run pytest tests/test_logging.py -v
 
 Expected: 3 tests PASS.
 
-- [ ] **Step 2.5: Commit**
+- [x] **Step 2.5: Commit**
 
 ```bash
 git add src/sleuth/logging.py tests/test_logging.py
@@ -235,7 +235,7 @@ git commit -m "feat: add get_logger helper — sleuth.* namespace, no handlers b
 - Create: `src/sleuth/types.py`
 - Test: `tests/test_types.py`
 
-- [ ] **Step 3.1: Write the failing test**
+- [x] **Step 3.1: Write the failing test**
 
 Create `tests/test_types.py`:
 
@@ -320,7 +320,7 @@ def test_length_literals():
     assert len(lengths) == 3
 ```
 
-- [ ] **Step 3.2: Run test to verify it fails**
+- [x] **Step 3.2: Run test to verify it fails**
 
 ```bash
 uv run pytest tests/test_types.py -v
@@ -328,7 +328,7 @@ uv run pytest tests/test_types.py -v
 
 Expected: `ImportError: cannot import name 'Source' from 'sleuth.types'`.
 
-- [ ] **Step 3.3: Implement `src/sleuth/types.py`**
+- [x] **Step 3.3: Implement `src/sleuth/types.py`**
 
 ```python
 """Public data shapes used throughout Sleuth.
@@ -410,7 +410,7 @@ class Result(BaseModel, Generic[T]):
     stats: RunStats
 ```
 
-- [ ] **Step 3.4: Run test to verify it passes**
+- [x] **Step 3.4: Run test to verify it passes**
 
 ```bash
 uv run pytest tests/test_types.py -v
@@ -418,7 +418,7 @@ uv run pytest tests/test_types.py -v
 
 Expected: all 9 tests PASS.
 
-- [ ] **Step 3.5: Commit**
+- [x] **Step 3.5: Commit**
 
 ```bash
 git add src/sleuth/types.py tests/test_types.py
@@ -433,7 +433,7 @@ git commit -m "feat: add core data shapes — Source, Chunk, RunStats, Result[T]
 - Create: `src/sleuth/events.py`
 - Test: `tests/test_events.py`
 
-- [ ] **Step 4.1: Write the failing test**
+- [x] **Step 4.1: Write the failing test**
 
 Create `tests/test_events.py`:
 
@@ -546,7 +546,7 @@ def test_event_union_roundtrip():
         assert event.type == p["type"]
 ```
 
-- [ ] **Step 4.2: Run test to verify it fails**
+- [x] **Step 4.2: Run test to verify it fails**
 
 ```bash
 uv run pytest tests/test_events.py -v
@@ -554,7 +554,7 @@ uv run pytest tests/test_events.py -v
 
 Expected: `ImportError: cannot import name 'RouteEvent' from 'sleuth.events'`.
 
-- [ ] **Step 4.3: Implement `src/sleuth/events.py`**
+- [x] **Step 4.3: Implement `src/sleuth/events.py`**
 
 ```python
 """Typed event stream for Sleuth runs.
@@ -666,7 +666,7 @@ Event = Annotated[
 ]
 ```
 
-- [ ] **Step 4.4: Run test to verify it passes**
+- [x] **Step 4.4: Run test to verify it passes**
 
 ```bash
 uv run pytest tests/test_events.py -v
@@ -674,7 +674,7 @@ uv run pytest tests/test_events.py -v
 
 Expected: all 12 tests PASS.
 
-- [ ] **Step 4.5: Commit**
+- [x] **Step 4.5: Commit**
 
 ```bash
 git add src/sleuth/events.py tests/test_events.py
@@ -689,7 +689,7 @@ git commit -m "feat: add typed event stream — all 9 event types + discriminate
 - Create: `src/sleuth/llm/base.py`
 - Test: `tests/llm/test_base.py`
 
-- [ ] **Step 5.1: Write the failing test**
+- [x] **Step 5.1: Write the failing test**
 
 Create `tests/llm/__init__.py` (empty) and `tests/llm/test_base.py`:
 
@@ -747,7 +747,7 @@ def test_llmclient_is_protocol():
     assert LLMClient is not None
 ```
 
-- [ ] **Step 5.2: Run test to verify it fails**
+- [x] **Step 5.2: Run test to verify it fails**
 
 ```bash
 uv run pytest tests/llm/test_base.py -v
@@ -755,13 +755,13 @@ uv run pytest tests/llm/test_base.py -v
 
 Expected: `ImportError: cannot import name 'TextDelta' from 'sleuth.llm.base'`.
 
-- [ ] **Step 5.3: Create `tests/llm/__init__.py`**
+- [x] **Step 5.3: Create `tests/llm/__init__.py`**
 
 ```bash
 touch tests/llm/__init__.py
 ```
 
-- [ ] **Step 5.4: Implement `src/sleuth/llm/base.py`**
+- [x] **Step 5.4: Implement `src/sleuth/llm/base.py`**
 
 ```python
 """LLM protocol and supporting types.
@@ -876,7 +876,7 @@ class LLMClient:
         yield  # make this a generator to satisfy the return type
 ```
 
-- [ ] **Step 5.5: Run test to verify it passes**
+- [x] **Step 5.5: Run test to verify it passes**
 
 ```bash
 uv run pytest tests/llm/test_base.py -v
@@ -884,7 +884,7 @@ uv run pytest tests/llm/test_base.py -v
 
 Expected: all 7 tests PASS.
 
-- [ ] **Step 5.6: Commit**
+- [x] **Step 5.6: Commit**
 
 ```bash
 git add src/sleuth/llm/base.py src/sleuth/llm/__init__.py tests/llm/__init__.py tests/llm/test_base.py
@@ -899,7 +899,7 @@ git commit -m "feat: add LLMClient protocol — TextDelta, ReasoningDelta, ToolC
 - Create: `src/sleuth/llm/stub.py`
 - Test: `tests/llm/test_stub.py`
 
-- [ ] **Step 6.1: Write the failing test**
+- [x] **Step 6.1: Write the failing test**
 
 Create `tests/llm/test_stub.py`:
 
@@ -967,7 +967,7 @@ async def test_llmchunk_item_passed_directly():
     assert chunks[1] == Stop("end_turn")
 ```
 
-- [ ] **Step 6.2: Run test to verify it fails**
+- [x] **Step 6.2: Run test to verify it fails**
 
 ```bash
 uv run pytest tests/llm/test_stub.py -v
@@ -975,7 +975,7 @@ uv run pytest tests/llm/test_stub.py -v
 
 Expected: `ImportError: cannot import name 'StubLLM' from 'sleuth.llm.stub'`.
 
-- [ ] **Step 6.3: Implement `src/sleuth/llm/stub.py`**
+- [x] **Step 6.3: Implement `src/sleuth/llm/stub.py`**
 
 ```python
 """StubLLM — deterministic test double for all engine and backend tests.
@@ -1044,7 +1044,7 @@ class StubLLM:
             yield item
 ```
 
-- [ ] **Step 6.4: Run test to verify it passes**
+- [x] **Step 6.4: Run test to verify it passes**
 
 ```bash
 uv run pytest tests/llm/test_stub.py -v
@@ -1052,7 +1052,7 @@ uv run pytest tests/llm/test_stub.py -v
 
 Expected: all 5 tests PASS.
 
-- [ ] **Step 6.5: Commit**
+- [x] **Step 6.5: Commit**
 
 ```bash
 git add src/sleuth/llm/stub.py tests/llm/test_stub.py
@@ -1067,7 +1067,7 @@ git commit -m "feat: add StubLLM — deterministic test double cycling scripted 
 - Create: `src/sleuth/backends/base.py`
 - Test: `tests/contract/test_backend_protocol.py`
 
-- [ ] **Step 7.1: Write the failing test**
+- [x] **Step 7.1: Write the failing test**
 
 Create `tests/contract/__init__.py` (empty) and `tests/contract/test_backend_protocol.py`:
 
@@ -1210,7 +1210,7 @@ class TestFakeBackend(BackendTestKit):
             await b.search("q")
 ```
 
-- [ ] **Step 7.2: Run test to verify it fails**
+- [x] **Step 7.2: Run test to verify it fails**
 
 ```bash
 uv run pytest tests/contract/test_backend_protocol.py -v
@@ -1218,13 +1218,13 @@ uv run pytest tests/contract/test_backend_protocol.py -v
 
 Expected: `ImportError: cannot import name 'Backend' from 'sleuth.backends.base'`.
 
-- [ ] **Step 7.3: Create `tests/contract/__init__.py`**
+- [x] **Step 7.3: Create `tests/contract/__init__.py`**
 
 ```bash
 touch tests/contract/__init__.py
 ```
 
-- [ ] **Step 7.4: Implement `src/sleuth/backends/base.py`**
+- [x] **Step 7.4: Implement `src/sleuth/backends/base.py`**
 
 ```python
 """Backend protocol and Capability enum.
@@ -1277,7 +1277,7 @@ class Backend(Protocol):
 __all__ = ["Backend", "Capability", "BackendError", "BackendTimeoutError"]
 ```
 
-- [ ] **Step 7.5: Run test to verify it passes**
+- [x] **Step 7.5: Run test to verify it passes**
 
 ```bash
 uv run pytest tests/contract/test_backend_protocol.py -v
@@ -1285,7 +1285,7 @@ uv run pytest tests/contract/test_backend_protocol.py -v
 
 Expected: all 6 tests in `TestFakeBackend` PASS.
 
-- [ ] **Step 7.6: Commit**
+- [x] **Step 7.6: Commit**
 
 ```bash
 git add src/sleuth/backends/base.py src/sleuth/backends/__init__.py tests/contract/__init__.py tests/contract/test_backend_protocol.py
@@ -1300,7 +1300,7 @@ git commit -m "feat: add Backend protocol + Capability enum + BackendTestKit reu
 - Create: `src/sleuth/memory/cache.py`
 - Test: `tests/memory/test_cache.py`
 
-- [ ] **Step 8.1: Write the failing test**
+- [x] **Step 8.1: Write the failing test**
 
 Create `tests/memory/__init__.py` (empty) and `tests/memory/test_cache.py`:
 
@@ -1367,7 +1367,7 @@ async def test_ttl_parameter_accepted():
     assert await c.get("query", "k") == "v"
 ```
 
-- [ ] **Step 8.2: Run test to verify it fails**
+- [x] **Step 8.2: Run test to verify it fails**
 
 ```bash
 uv run pytest tests/memory/test_cache.py -v
@@ -1375,13 +1375,13 @@ uv run pytest tests/memory/test_cache.py -v
 
 Expected: `ImportError: cannot import name 'MemoryCache' from 'sleuth.memory.cache'`.
 
-- [ ] **Step 8.3: Create `tests/memory/__init__.py`**
+- [x] **Step 8.3: Create `tests/memory/__init__.py`**
 
 ```bash
 touch tests/memory/__init__.py
 ```
 
-- [ ] **Step 8.4: Implement `src/sleuth/memory/cache.py`**
+- [x] **Step 8.4: Implement `src/sleuth/memory/cache.py`**
 
 ```python
 """Cache protocol and MemoryCache implementation.
@@ -1461,7 +1461,7 @@ class MemoryCache:
             self._store[namespace].clear()
 ```
 
-- [ ] **Step 8.5: Run test to verify it passes**
+- [x] **Step 8.5: Run test to verify it passes**
 
 ```bash
 uv run pytest tests/memory/test_cache.py -v
@@ -1469,7 +1469,7 @@ uv run pytest tests/memory/test_cache.py -v
 
 Expected: all 7 tests PASS.
 
-- [ ] **Step 8.6: Commit**
+- [x] **Step 8.6: Commit**
 
 ```bash
 git add src/sleuth/memory/cache.py src/sleuth/memory/__init__.py tests/memory/__init__.py tests/memory/test_cache.py
@@ -1484,7 +1484,7 @@ git commit -m "feat: add Cache protocol + MemoryCache (in-memory, Phase 4 will a
 - Create: `src/sleuth/memory/session.py`
 - Test: `tests/memory/test_session.py`
 
-- [ ] **Step 9.1: Write the failing test**
+- [x] **Step 9.1: Write the failing test**
 
 Create `tests/memory/test_session.py`:
 
@@ -1552,7 +1552,7 @@ def test_as_messages_interleaves_user_assistant():
     assert msgs[3].role == "assistant"
 ```
 
-- [ ] **Step 9.2: Run test to verify it fails**
+- [x] **Step 9.2: Run test to verify it fails**
 
 ```bash
 uv run pytest tests/memory/test_session.py -v
@@ -1560,7 +1560,7 @@ uv run pytest tests/memory/test_session.py -v
 
 Expected: `ImportError: cannot import name 'Session' from 'sleuth.memory.session'`.
 
-- [ ] **Step 9.3: Implement `src/sleuth/memory/session.py`**
+- [x] **Step 9.3: Implement `src/sleuth/memory/session.py`**
 
 ```python
 """Session — multi-turn ring buffer for conversation coherence.
@@ -1626,7 +1626,7 @@ class Session:
         return messages
 ```
 
-- [ ] **Step 9.4: Run test to verify it passes**
+- [x] **Step 9.4: Run test to verify it passes**
 
 ```bash
 uv run pytest tests/memory/test_session.py -v
@@ -1634,7 +1634,7 @@ uv run pytest tests/memory/test_session.py -v
 
 Expected: all 6 tests PASS.
 
-- [ ] **Step 9.5: Commit**
+- [x] **Step 9.5: Commit**
 
 ```bash
 git add src/sleuth/memory/session.py tests/memory/test_session.py
@@ -1651,7 +1651,7 @@ git commit -m "feat: add Session ring buffer — max_turns, add_turn, as_message
 
 The Tavily backend uses `httpx` for HTTP; tests mock with `respx`.
 
-- [ ] **Step 10.1: Write the failing test**
+- [x] **Step 10.1: Write the failing test**
 
 Create `tests/backends/__init__.py` (empty) and `tests/backends/test_web.py`:
 
@@ -1764,7 +1764,7 @@ async def test_web_backend_factory_returns_tavily():
     assert isinstance(b, TavilyBackend)
 ```
 
-- [ ] **Step 10.2: Run test to verify it fails**
+- [x] **Step 10.2: Run test to verify it fails**
 
 ```bash
 uv run pytest tests/backends/test_web.py -v
@@ -1772,13 +1772,13 @@ uv run pytest tests/backends/test_web.py -v
 
 Expected: `ImportError: cannot import name 'TavilyBackend' from 'sleuth.backends.web'`.
 
-- [ ] **Step 10.3: Create `tests/backends/__init__.py`**
+- [x] **Step 10.3: Create `tests/backends/__init__.py`**
 
 ```bash
 touch tests/backends/__init__.py
 ```
 
-- [ ] **Step 10.4: Implement `src/sleuth/backends/web.py`**
+- [x] **Step 10.4: Implement `src/sleuth/backends/web.py`**
 
 ```python
 """Web search backends.
@@ -1895,7 +1895,7 @@ def WebBackend(
     raise ValueError(f"Unknown web provider: {provider!r}.  Phase 9 adds exa/brave/serpapi.")
 ```
 
-- [ ] **Step 10.5: Run tests to verify they pass**
+- [x] **Step 10.5: Run tests to verify they pass**
 
 ```bash
 uv run pytest tests/backends/test_web.py -v
@@ -1903,7 +1903,7 @@ uv run pytest tests/backends/test_web.py -v
 
 Expected: all 9 tests PASS.
 
-- [ ] **Step 10.6: Also run TavilyBackend through BackendTestKit**
+- [x] **Step 10.6: Also run TavilyBackend through BackendTestKit**
 
 Add a class to the bottom of `tests/backends/test_web.py`:
 
@@ -1930,7 +1930,7 @@ uv run pytest tests/backends/test_web.py -v
 
 Expected: all contract tests PASS (cancellation test may show as xfail or pass — both acceptable for a mocked backend).
 
-- [ ] **Step 10.7: Commit**
+- [x] **Step 10.7: Commit**
 
 ```bash
 git add src/sleuth/backends/web.py tests/backends/__init__.py tests/backends/test_web.py
@@ -1947,7 +1947,7 @@ git commit -m "feat: add TavilyBackend + WebBackend factory (Tavily-only smoke, 
 
 The router is heuristic-only (no LLM calls).  It maps a query to `"fast"` or `"deep"` depth.  When the caller passes `depth="fast"` or `depth="deep"`, the router passes it through.  `depth="auto"` triggers heuristics.
 
-- [ ] **Step 11.1: Write the failing test**
+- [x] **Step 11.1: Write the failing test**
 
 Create `tests/engine/__init__.py` (empty) and `tests/engine/test_router.py`:
 
@@ -2011,7 +2011,7 @@ def test_route_event_type_is_route():
     assert isinstance(event, RouteEvent)
 ```
 
-- [ ] **Step 11.2: Run test to verify it fails**
+- [x] **Step 11.2: Run test to verify it fails**
 
 ```bash
 uv run pytest tests/engine/test_router.py -v
@@ -2019,13 +2019,13 @@ uv run pytest tests/engine/test_router.py -v
 
 Expected: `ImportError: cannot import name 'Router' from 'sleuth.engine.router'`.
 
-- [ ] **Step 11.3: Create `tests/engine/__init__.py`**
+- [x] **Step 11.3: Create `tests/engine/__init__.py`**
 
 ```bash
 touch tests/engine/__init__.py
 ```
 
-- [ ] **Step 11.4: Implement `src/sleuth/engine/router.py`**
+- [x] **Step 11.4: Implement `src/sleuth/engine/router.py`**
 
 ```python
 """Heuristic depth router — no LLM calls.
@@ -2123,7 +2123,7 @@ class Router:
         return "fast", "no complexity signals detected"
 ```
 
-- [ ] **Step 11.5: Run tests to verify they pass**
+- [x] **Step 11.5: Run tests to verify they pass**
 
 ```bash
 uv run pytest tests/engine/test_router.py -v
@@ -2131,7 +2131,7 @@ uv run pytest tests/engine/test_router.py -v
 
 Expected: all 7 tests PASS.
 
-- [ ] **Step 11.6: Commit**
+- [x] **Step 11.6: Commit**
 
 ```bash
 git add src/sleuth/engine/router.py src/sleuth/engine/__init__.py tests/engine/__init__.py tests/engine/test_router.py
@@ -2148,7 +2148,7 @@ git commit -m "feat: add heuristic Router — auto/fast/deep depth classificatio
 
 The executor fans out to all registered backends in parallel, applies per-backend timeouts, handles failures per spec §7.1, and de-duplicates by source location.  Phase 3 will extend this for multi-query and speculative prefetch.
 
-- [ ] **Step 12.1: Write the failing test**
+- [x] **Step 12.1: Write the failing test**
 
 Create `tests/engine/test_executor.py`:
 
@@ -2268,7 +2268,7 @@ async def test_k_limits_per_backend():
     assert len(chunks) <= 1
 ```
 
-- [ ] **Step 12.2: Run test to verify it fails**
+- [x] **Step 12.2: Run test to verify it fails**
 
 ```bash
 uv run pytest tests/engine/test_executor.py -v
@@ -2276,7 +2276,7 @@ uv run pytest tests/engine/test_executor.py -v
 
 Expected: `ImportError: cannot import name 'Executor' from 'sleuth.engine.executor'`.
 
-- [ ] **Step 12.3: Implement `src/sleuth/engine/executor.py`**
+- [x] **Step 12.3: Implement `src/sleuth/engine/executor.py`**
 
 ```python
 """Single-backend fan-out executor.
@@ -2409,7 +2409,7 @@ class Executor:
         return result
 ```
 
-- [ ] **Step 12.4: Run tests to verify they pass**
+- [x] **Step 12.4: Run tests to verify they pass**
 
 ```bash
 uv run pytest tests/engine/test_executor.py -v
@@ -2417,7 +2417,7 @@ uv run pytest tests/engine/test_executor.py -v
 
 Expected: all 7 tests PASS.
 
-- [ ] **Step 12.5: Commit**
+- [x] **Step 12.5: Commit**
 
 ```bash
 git add src/sleuth/engine/executor.py tests/engine/test_executor.py
@@ -2434,7 +2434,7 @@ git commit -m "feat: add Executor — parallel backend fan-out, timeouts, dedup,
 
 The synthesizer takes the merged chunks, calls the LLM stream, and yields `ThinkingEvent`, `TokenEvent`, and `CitationEvent` objects.  It also builds the final `Result`.
 
-- [ ] **Step 13.1: Write the failing test**
+- [x] **Step 13.1: Write the failing test**
 
 Create `tests/engine/test_synthesizer.py`:
 
@@ -2566,7 +2566,7 @@ async def test_builds_result_text_from_token_events():
     assert token_texts == "hello world"
 ```
 
-- [ ] **Step 13.2: Run test to verify it fails**
+- [x] **Step 13.2: Run test to verify it fails**
 
 ```bash
 uv run pytest tests/engine/test_synthesizer.py -v
@@ -2574,7 +2574,7 @@ uv run pytest tests/engine/test_synthesizer.py -v
 
 Expected: `ImportError: cannot import name 'Synthesizer' from 'sleuth.engine.synthesizer'`.
 
-- [ ] **Step 13.3: Implement `src/sleuth/engine/synthesizer.py`**
+- [x] **Step 13.3: Implement `src/sleuth/engine/synthesizer.py`**
 
 ```python
 """Streaming synthesizer — converts chunks into a token + citation event stream.
@@ -2731,7 +2731,7 @@ class Synthesizer:
         yield DoneEvent(type="done", stats=stats)
 ```
 
-- [ ] **Step 13.4: Run tests to verify they pass**
+- [x] **Step 13.4: Run tests to verify they pass**
 
 ```bash
 uv run pytest tests/engine/test_synthesizer.py -v
@@ -2739,7 +2739,7 @@ uv run pytest tests/engine/test_synthesizer.py -v
 
 Expected: all 6 tests PASS.
 
-- [ ] **Step 13.5: Commit**
+- [x] **Step 13.5: Commit**
 
 ```bash
 git add src/sleuth/engine/synthesizer.py tests/engine/test_synthesizer.py
@@ -2755,7 +2755,7 @@ git commit -m "feat: add Synthesizer — streaming ThinkingEvent/TokenEvent/Cita
 
 This test runs a full `aask` call with `StubLLM` + `FakeBackend` and snapshots the event sequence via `syrupy`.  Run once to generate the snapshot, then it becomes a regression guard.
 
-- [ ] **Step 14.1: Create test**
+- [x] **Step 14.1: Create test**
 
 Create `tests/snapshots/__init__.py` (empty) and `tests/snapshots/test_event_stream_snapshot.py`:
 
@@ -2806,7 +2806,7 @@ async def test_fast_path_event_stream_snapshot(snapshot: SnapshotAssertion):
     assert events == snapshot
 ```
 
-- [ ] **Step 14.2: Run test once to generate snapshot (expected: PASS with snapshot write)**
+- [x] **Step 14.2: Run test once to generate snapshot (expected: PASS with snapshot write)**
 
 ```bash
 uv run pytest tests/snapshots/test_event_stream_snapshot.py -v --snapshot-update
@@ -2814,7 +2814,7 @@ uv run pytest tests/snapshots/test_event_stream_snapshot.py -v --snapshot-update
 
 Expected: test PASSES and writes `tests/snapshots/__snapshots__/test_event_stream_snapshot.ambr`.
 
-- [ ] **Step 14.3: Run again to verify snapshot match**
+- [x] **Step 14.3: Run again to verify snapshot match**
 
 ```bash
 uv run pytest tests/snapshots/test_event_stream_snapshot.py -v
@@ -2822,7 +2822,7 @@ uv run pytest tests/snapshots/test_event_stream_snapshot.py -v
 
 Expected: PASS (snapshot matches).
 
-- [ ] **Step 14.4: Commit**
+- [x] **Step 14.4: Commit**
 
 ```bash
 git add tests/snapshots/__init__.py tests/snapshots/test_event_stream_snapshot.py "tests/snapshots/__snapshots__/"
@@ -2839,7 +2839,7 @@ git commit -m "test: add syrupy snapshot for fast-path event stream"
 
 This is the top-level `Sleuth` class that wires Router → Executor → Synthesizer and exposes `aask` (async generator) and `ask` (sync wrapper).
 
-- [ ] **Step 15.1: Write the failing test**
+- [x] **Step 15.1: Write the failing test**
 
 Create `tests/test_agent.py`:
 
@@ -2933,7 +2933,7 @@ async def test_aask_with_session_adds_turn():
     assert session.turns[0].query == "q1?"
 ```
 
-- [ ] **Step 15.2: Run test to verify it fails**
+- [x] **Step 15.2: Run test to verify it fails**
 
 ```bash
 uv run pytest tests/test_agent.py -v
@@ -2941,7 +2941,7 @@ uv run pytest tests/test_agent.py -v
 
 Expected: `ImportError: cannot import name 'Sleuth' from 'sleuth._agent'`.
 
-- [ ] **Step 15.3: Implement `src/sleuth/_agent.py`**
+- [x] **Step 15.3: Implement `src/sleuth/_agent.py`**
 
 ```python
 """Sleuth — the top-level agent class.
@@ -3176,7 +3176,7 @@ class Sleuth:
         return await self._collect(query=query, depth="fast", schema=schema, session=None)
 ```
 
-- [ ] **Step 15.4: Run tests to verify they pass**
+- [x] **Step 15.4: Run tests to verify they pass**
 
 ```bash
 uv run pytest tests/test_agent.py -v
@@ -3184,7 +3184,7 @@ uv run pytest tests/test_agent.py -v
 
 Expected: all 9 tests PASS.
 
-- [ ] **Step 15.5: Commit**
+- [x] **Step 15.5: Commit**
 
 ```bash
 git add src/sleuth/_agent.py tests/test_agent.py
@@ -3201,7 +3201,7 @@ git commit -m "feat: add Sleuth agent class — aask/ask, Router+Executor+Synthe
 
 Per conventions §4, `__init__.py` re-exports the full public surface.
 
-- [ ] **Step 16.1: Write the failing test**
+- [x] **Step 16.1: Write the failing test**
 
 Create `tests/test_public_api.py`:
 
@@ -3251,7 +3251,7 @@ def test_backend_importable():
     assert Tavily is not None
 ```
 
-- [ ] **Step 16.2: Run test to verify it fails**
+- [x] **Step 16.2: Run test to verify it fails**
 
 ```bash
 uv run pytest tests/test_public_api.py -v
@@ -3259,7 +3259,7 @@ uv run pytest tests/test_public_api.py -v
 
 Expected: some imports fail (module exists as stub with no exports yet).
 
-- [ ] **Step 16.3: Update `src/sleuth/__init__.py`**
+- [x] **Step 16.3: Update `src/sleuth/__init__.py`**
 
 ```python
 """Sleuth — plug-and-play agentic search with reasoning, planning, and observability.
@@ -3318,7 +3318,7 @@ __all__ = [
 ]
 ```
 
-- [ ] **Step 16.4: Update `src/sleuth/backends/__init__.py`** to expose `Tavily`:
+- [x] **Step 16.4: Update `src/sleuth/backends/__init__.py`** to expose `Tavily`:
 
 ```python
 from sleuth.backends.web import TavilyBackend as Tavily
@@ -3326,7 +3326,7 @@ from sleuth.backends.web import TavilyBackend as Tavily
 __all__ = ["Tavily"]
 ```
 
-- [ ] **Step 16.5: Run tests to verify they pass**
+- [x] **Step 16.5: Run tests to verify they pass**
 
 ```bash
 uv run pytest tests/test_public_api.py -v
@@ -3334,7 +3334,7 @@ uv run pytest tests/test_public_api.py -v
 
 Expected: all 7 tests PASS.
 
-- [ ] **Step 16.6: Commit**
+- [x] **Step 16.6: Commit**
 
 ```bash
 git add src/sleuth/__init__.py src/sleuth/backends/__init__.py tests/test_public_api.py
@@ -3349,7 +3349,7 @@ git commit -m "feat: add public re-exports to sleuth/__init__.py (Sleuth, Sessio
 - Modify: `tests/conftest.py`
 - Test: verified by running the full suite
 
-- [ ] **Step 17.1: Append fixtures to `tests/conftest.py`**
+- [x] **Step 17.1: Append fixtures to `tests/conftest.py`**
 
 Open the existing `tests/conftest.py` (created by Phase 0) and add:
 
@@ -3390,7 +3390,7 @@ def fake_backend():
     return _FakeBackend()
 ```
 
-- [ ] **Step 17.2: Verify the fixtures are available**
+- [x] **Step 17.2: Verify the fixtures are available**
 
 ```bash
 uv run pytest tests/ --collect-only -q 2>&1 | head -30
@@ -3398,7 +3398,7 @@ uv run pytest tests/ --collect-only -q 2>&1 | head -30
 
 Expected: no fixture errors; tests collected.
 
-- [ ] **Step 17.3: Commit**
+- [x] **Step 17.3: Commit**
 
 ```bash
 git add tests/conftest.py
@@ -3411,7 +3411,7 @@ git commit -m "test: add stub_llm + fake_backend fixtures to conftest.py (Phase 
 
 **Files:** None created
 
-- [ ] **Step 18.1: Run all unit tests**
+- [x] **Step 18.1: Run all unit tests**
 
 ```bash
 uv run pytest -m "not integration" -v
@@ -3419,7 +3419,7 @@ uv run pytest -m "not integration" -v
 
 Expected: all tests PASS. Snapshot tests show "matched".
 
-- [ ] **Step 18.2: Run coverage check**
+- [x] **Step 18.2: Run coverage check**
 
 ```bash
 uv run pytest -m "not integration" --cov=src/sleuth --cov-report=term-missing
@@ -3427,7 +3427,7 @@ uv run pytest -m "not integration" --cov=src/sleuth --cov-report=term-missing
 
 Expected: coverage for `src/sleuth/` is at or above 85%.  If below, add targeted tests for uncovered branches.
 
-- [ ] **Step 18.3: Run mypy**
+- [x] **Step 18.3: Run mypy**
 
 ```bash
 uv run mypy src/sleuth/
@@ -3435,7 +3435,7 @@ uv run mypy src/sleuth/
 
 Expected: exit 0 (no errors). Fix any strict errors before the PR.
 
-- [ ] **Step 18.4: Run ruff**
+- [x] **Step 18.4: Run ruff**
 
 ```bash
 uv run ruff check src/sleuth/ tests/ && uv run ruff format --check src/sleuth/ tests/
@@ -3443,7 +3443,7 @@ uv run ruff check src/sleuth/ tests/ && uv run ruff format --check src/sleuth/ t
 
 Expected: no lint or formatting errors.
 
-- [ ] **Step 18.5: Commit any lint/type fixes (if needed)**
+- [x] **Step 18.5: Commit any lint/type fixes (if needed)**
 
 ```bash
 git add -u
@@ -3456,13 +3456,13 @@ git commit -m "fix: address mypy/ruff issues from Phase 1 full suite"
 
 **Files:** None created
 
-- [ ] **Step 19.1: Push branch**
+- [x] **Step 19.1: Push branch**
 
 ```bash
 git push -u origin feature/phase-1-core-mvp
 ```
 
-- [ ] **Step 19.2: Open PR**
+- [x] **Step 19.2: Open PR**
 
 ```bash
 gh pr create \
@@ -3503,11 +3503,11 @@ Phase 1 Core MVP — foundational types, protocols, and minimal end-to-end Q&A.
 
 ## Test plan
 
-- [ ] All unit tests pass: `uv run pytest -m "not integration" -v`
-- [ ] Coverage ≥ 85%: `uv run pytest --cov=src/sleuth --cov-report=term-missing`
-- [ ] mypy strict passes: `uv run mypy src/sleuth/`
-- [ ] ruff clean: `uv run ruff check src/sleuth/ tests/`
-- [ ] Snapshot tests match: `uv run pytest tests/snapshots/ -v`
+- [x] All unit tests pass: `uv run pytest -m "not integration" -v`
+- [x] Coverage ≥ 85%: `uv run pytest --cov=src/sleuth --cov-report=term-missing`
+- [x] mypy strict passes: `uv run mypy src/sleuth/`
+- [x] ruff clean: `uv run ruff check src/sleuth/ tests/`
+- [x] Snapshot tests match: `uv run pytest tests/snapshots/ -v`
 EOF
 )"
 ```

@@ -1,0 +1,10 @@
+# serializer version: 1
+# name: test_fast_path_event_stream_snapshot
+  list([
+    'route',
+    'search',
+    'token',
+    'citation',
+    'done',
+  ])
+# ---
