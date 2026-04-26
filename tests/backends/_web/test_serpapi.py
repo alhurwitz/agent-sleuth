@@ -77,10 +77,13 @@ async def test_serpapi_raises_on_5xx():
 
 @pytest.mark.unit
 async def test_serpapi_raises_immediately_on_403():
+    """403 Forbidden is not retried — surfaces as BackendError."""
+    from sleuth.errors import BackendError
+
     with respx.mock:
         respx.get(_SERPAPI_URL).respond(403)
         backend = SerpAPIBackend(api_key="bad-key", _backoff_base=0.01)  # pragma: allowlist secret
-        with pytest.raises(httpx.HTTPStatusError):
+        with pytest.raises(BackendError):
             await backend.search("query", k=5)
 
 

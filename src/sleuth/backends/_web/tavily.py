@@ -9,6 +9,7 @@ import httpx
 
 from sleuth.backends._web._base import FetchPipeline, TokenBucket, with_backoff
 from sleuth.backends.base import Capability
+from sleuth.errors import BackendError
 from sleuth.types import Chunk, Source
 
 logger = logging.getLogger("sleuth.backends.web.tavily")
@@ -68,9 +69,12 @@ class TavilyBackend:
                 resp.raise_for_status()
                 return resp.json()  # type: ignore[no-any-return]
 
-        data = await with_backoff(
-            _call, max_retries=self._max_retries, base_delay=self._backoff_base
-        )
+        try:
+            data = await with_backoff(
+                _call, max_retries=self._max_retries, base_delay=self._backoff_base
+            )
+        except httpx.HTTPStatusError as exc:
+            raise BackendError(f"Tavily returned HTTP {exc.response.status_code}") from exc
 
         results: list[dict[str, Any]] = data.get("results", [])[:k]
         chunks = [

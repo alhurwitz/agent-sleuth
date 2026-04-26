@@ -76,11 +76,13 @@ async def test_tavily_raises_backend_error_on_5xx():
 
 @pytest.mark.unit
 async def test_tavily_raises_immediately_on_401():
-    """401 Unauthorized is not retried."""
+    """401 Unauthorized is not retried — surfaces as BackendError."""
+    from sleuth.errors import BackendError
+
     with respx.mock:
         respx.post("https://api.tavily.com/search").respond(401)
         backend = TavilyBackend(api_key="bad-key", _backoff_base=0.01)  # pragma: allowlist secret
-        with pytest.raises(httpx.HTTPStatusError):
+        with pytest.raises(BackendError):
             await backend.search("query", k=5)
 
 

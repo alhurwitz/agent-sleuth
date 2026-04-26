@@ -77,10 +77,13 @@ async def test_brave_raises_on_5xx():
 
 @pytest.mark.unit
 async def test_brave_raises_immediately_on_401():
+    """401 Unauthorized is not retried — surfaces as BackendError."""
+    from sleuth.errors import BackendError
+
     with respx.mock:
         respx.get(_BRAVE_URL).respond(401)
         backend = BraveBackend(api_key="bad-key", _backoff_base=0.01)  # pragma: allowlist secret
-        with pytest.raises(httpx.HTTPStatusError):
+        with pytest.raises(BackendError):
             await backend.search("query", k=5)
 
 

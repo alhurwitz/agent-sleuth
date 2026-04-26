@@ -1,110 +1,74 @@
-"""Web search backends.
+"""WebBackend factory and per-provider class re-exports.
 
-Phase 1 ships a Tavily-only smoke implementation plus the ``WebBackend``
-factory (currently returns ``TavilyBackend`` for all providers).  Phase 9
-expands with Exa, Brave, and SerpAPI adapters and a richer factory.
+Public symbols:
+    WebBackend      — factory function; returns a per-provider Backend instance.
+    TavilyBackend   — direct per-provider class (power users).
+    ExaBackend      — direct per-provider class (power users).
+    BraveBackend    — direct per-provider class (power users).
+    SerpAPIBackend  — direct per-provider class (power users).
 
-The public symbol ``WebBackend`` is stable — downstream code should use it
-rather than importing ``TavilyBackend`` directly.
+Spec §7.2 and §15 #4: both the factory and the per-provider classes are public.
 """
 
 from __future__ import annotations
 
-import logging
-from typing import Any, Literal
+from typing import Any
 
-import httpx
+from sleuth.backends._web.brave import BraveBackend
+from sleuth.backends._web.exa import ExaBackend
+from sleuth.backends._web.serpapi import SerpAPIBackend
+from sleuth.backends._web.tavily import TavilyBackend
 
-from sleuth.backends.base import Capability
-from sleuth.errors import BackendError
-from sleuth.types import Chunk, Source
+__all__ = [
+    "BraveBackend",
+    "ExaBackend",
+    "SerpAPIBackend",
+    "TavilyBackend",
+    "WebBackend",
+]
 
-logger = logging.getLogger("sleuth.backends.web")
+_PROVIDERS: dict[str, type[Any]] = {
+    "tavily": TavilyBackend,
+    "exa": ExaBackend,
+    "brave": BraveBackend,
+    "serpapi": SerpAPIBackend,
+}
 
-# Default timeout per spec §7.1
-_DEFAULT_TIMEOUT_S = 8.0
-
-
-class TavilyBackend:
-    """Tavily search API backend.
-
-    Implements the ``Backend`` Protocol structurally.  Uses ``httpx`` for
-    async HTTP; respx is used in tests to mock requests.
-
-    Args:
-        api_key: Tavily API key (``TAVILY_API_KEY`` env var if not passed).
-        timeout_s: Per-request timeout in seconds.  Default: 8s (spec §7.1).
-    """
-
-    name = "tavily"
-    capabilities: frozenset[Capability] = frozenset({Capability.WEB, Capability.FRESH})
-
-    _SEARCH_URL = "https://api.tavily.com/search"
-
-    def __init__(self, api_key: str, *, timeout_s: float = _DEFAULT_TIMEOUT_S) -> None:
-        self._api_key = api_key
-        self._timeout_s = timeout_s
-
-    async def search(self, query: str, k: int = 10) -> list[Chunk]:
-        """Search Tavily and return up to ``k`` chunks.
-
-        Raises:
-            BackendError: On any HTTP or API-level error.
-        """
-        payload: dict[str, Any] = {
-            "api_key": self._api_key,
-            "query": query,
-            "max_results": k,
-        }
-        logger.debug("Tavily search: query=%r k=%d", query, k)
-        try:
-            async with httpx.AsyncClient(timeout=self._timeout_s) as client:
-                resp = await client.post(self._SEARCH_URL, json=payload)
-        except httpx.TimeoutException as exc:
-            raise BackendError(f"Tavily request timed out: {exc}") from exc
-        except httpx.HTTPError as exc:
-            raise BackendError(f"Tavily HTTP error: {exc}") from exc
-
-        if resp.status_code != 200:
-            raise BackendError(f"Tavily returned HTTP {resp.status_code}: {resp.text[:200]}")
-
-        data = resp.json()
-        chunks: list[Chunk] = []
-        for item in data.get("results", [])[:k]:
-            source = Source(
-                kind="url",
-                location=item.get("url", ""),
-                title=item.get("title"),
-            )
-            chunks.append(
-                Chunk(
-                    text=item.get("content", ""),
-                    source=source,
-                    score=item.get("score"),
-                )
-            )
-        return chunks
+# Type alias for the union of all provider types
+WebBackendType = TavilyBackend | ExaBackend | BraveBackend | SerpAPIBackend
 
 
 def WebBackend(
-    provider: Literal["tavily"] = "tavily",
     *,
+    provider: str,
     api_key: str,
     **kwargs: Any,
-) -> TavilyBackend:
-    """Factory for web search backends.
-
-    Phase 9 expands this to support ``provider="exa"``, ``"brave"``, ``"serpapi"``.
-    The symbol is stable; callers should always use ``WebBackend(...)`` rather
-    than importing ``TavilyBackend`` directly.
+) -> WebBackendType:
+    """Factory that returns the appropriate per-provider Backend instance.
 
     Args:
-        provider: Which provider to use.  Currently only ``"tavily"``.
+        provider: One of ``"tavily"``, ``"exa"``, ``"brave"``, ``"serpapi"``.
         api_key: API key for the chosen provider.
+        **kwargs: Forwarded verbatim to the provider constructor.
+            Common options: ``fetch``, ``fetch_top_n``, ``rate_limit``,
+            ``max_retries``.
 
     Returns:
-        A backend instance implementing the ``Backend`` Protocol.
+        A Backend-protocol-compliant instance for the requested provider.
+
+    Raises:
+        ValueError: If ``provider`` is not one of the supported values.
+
+    Example::
+
+        # Factory usage
+        backend = WebBackend(provider="tavily", api_key=os.environ["TAVILY_KEY"])
+
+        # Per-provider class (power user / type checker friendly)
+        backend = TavilyBackend(api_key=os.environ["TAVILY_KEY"], fetch=True)
     """
-    if provider == "tavily":
-        return TavilyBackend(api_key=api_key, **kwargs)
-    raise ValueError(f"Unknown web provider: {provider!r}.  Phase 9 adds exa/brave/serpapi.")
+    cls = _PROVIDERS.get(provider)
+    if cls is None:
+        supported = ", ".join(sorted(_PROVIDERS))
+        raise ValueError(f"Unknown provider {provider!r}. Supported: {supported}")
+    return cls(api_key=api_key, **kwargs)  # type: ignore[no-any-return]
