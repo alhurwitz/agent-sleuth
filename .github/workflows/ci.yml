@@ -37,6 +37,14 @@ jobs:
         with:
           enable-cache: true
           python-version: ${{ matrix.python-version }}
+      - name: Install ripgrep (CodeSearch backend dep)
+        run: |
+          if [[ "$RUNNER_OS" == "Linux" ]]; then
+            sudo apt-get update -qq && sudo apt-get install -y ripgrep
+          elif [[ "$RUNNER_OS" == "macOS" ]]; then
+            brew install ripgrep
+          fi
+          rg --version
       - run: uv sync --frozen --all-extras --group dev
       - name: Run unit tests with coverage
         run: |
@@ -67,4 +75,7 @@ jobs:
       # --ignore-vuln GHSA-58qw-9mgm-455v: pip <=26.0.1 zip/tar interpretation
       # conflict (CVE-2026-3219); no patched version available yet. Revisit
       # when pip ships a fix and update / drop this ignore.
-      - run: uv run pip-audit --skip-editable --ignore-vuln GHSA-58qw-9mgm-455v
+      # Ignored vulns:
+      # - GHSA-58qw-9mgm-455v: pip <=26.0.1 zip/tar interpretation, no patched pip yet.
+      # - GHSA-2jrp-274c-jhv3: pydantic-ai <=0.8.x; fixed in 1.56.0 — bump the extra pin and drop this in a follow-up.
+      - run: uv run pip-audit --skip-editable --ignore-vuln GHSA-58qw-9mgm-455v --ignore-vuln GHSA-2jrp-274c-jhv3

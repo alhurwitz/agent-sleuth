@@ -8,10 +8,7 @@ installed.
 from __future__ import annotations
 
 import logging
-from typing import TYPE_CHECKING
-
-if TYPE_CHECKING:
-    pass
+from typing import Any
 
 from sleuth.types import Chunk
 
@@ -31,13 +28,13 @@ class Embedder:
     ) -> None:
         self._rerank = rerank
         self._model_name = model_name
-        self._model = None  # lazy-initialized
+        self._model: Any = None  # lazy-initialized fastembed TextEmbedding
 
     def _load_model(self) -> None:  # pragma: no cover
         if self._model is not None:
             return
         try:
-            from fastembed import TextEmbedding  # type: ignore[import-not-found]
+            from fastembed import TextEmbedding
         except ImportError as exc:
             raise ImportError(
                 "Embedding re-rank requires 'agent-sleuth[code-embed]'. "
@@ -56,7 +53,7 @@ class Embedder:
 
         import asyncio  # pragma: no cover
 
-        import numpy as np  # type: ignore[import-not-found]  # pragma: no cover
+        import numpy as np  # pragma: no cover
 
         self._load_model()  # pragma: no cover
 
