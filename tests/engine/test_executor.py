@@ -52,14 +52,14 @@ class DuplicateBackend:
 
 async def test_single_backend_returns_chunks():
     executor = Executor(backends=[OkBackend()], timeout_s=5.0)
-    events, chunks = await executor.run("query", k=10)
+    _events, chunks = await executor.run("query", k=10)
     assert len(chunks) == 2
     assert all(isinstance(c, Chunk) for c in chunks)
 
 
 async def test_emits_search_event():
     executor = Executor(backends=[OkBackend()], timeout_s=5.0)
-    events, chunks = await executor.run("query", k=10)
+    events, _chunks = await executor.run("query", k=10)
     search_events = [e for e in events if isinstance(e, SearchEvent)]
     assert len(search_events) == 1
     assert search_events[0].backend == "ok"
@@ -94,7 +94,7 @@ async def test_partial_failure_keeps_successful_results():
 
 async def test_deduplication_by_source_location():
     executor = Executor(backends=[OkBackend(), DuplicateBackend()], timeout_s=5.0)
-    events, chunks = await executor.run("query", k=10)
+    _events, chunks = await executor.run("query", k=10)
     locations = [c.source.location for c in chunks]
     assert len(locations) == len(set(locations)), "Duplicate source locations found"
 
