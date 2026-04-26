@@ -19,7 +19,7 @@
 **Files:**
 - Modify: `.gitignore`
 
-- [ ] **Step 1: Create feature branch off `main`**
+- [x] **Step 1: Create feature branch off `main`**
 
 ```bash
 git checkout main
@@ -28,7 +28,7 @@ git checkout -b feature/phase-0-bootstrap
 
 Expected: `Switched to a new branch 'feature/phase-0-bootstrap'`
 
-- [ ] **Step 2: Uncomment `.venv/` in `.gitignore`**
+- [x] **Step 2: Uncomment `.venv/` in `.gitignore`**
 
 Open `.gitignore`. Find the block:
 
@@ -55,7 +55,7 @@ grep -n "\.sleuth" .gitignore
 
 Expected: a line like `227:.sleuth/`
 
-- [ ] **Step 3: Commit (only if `.gitignore` was modified)**
+- [x] **Step 3: Commit (only if `.gitignore` was modified)**
 
 If Step 2 required removing a `#` to uncomment `.venv`:
 
@@ -73,7 +73,7 @@ If `.venv` was already uncommented (confirmed in Step 2), skip this step — not
 **Files:**
 - Create: `pyproject.toml`
 
-- [ ] **Step 1: Create `pyproject.toml` (verbatim from conventions §3)**
+- [x] **Step 1: Create `pyproject.toml` (verbatim from conventions §3)**
 
 ```toml
 [project]
@@ -167,7 +167,7 @@ fail_under = 85
 exclude_also = ["if TYPE_CHECKING:", "@overload"]
 ```
 
-- [ ] **Step 2: Commit**
+- [x] **Step 2: Commit**
 
 ```bash
 git add pyproject.toml
@@ -182,7 +182,7 @@ git commit -m "chore: add pyproject.toml skeleton (uv + hatchling, all extras, d
 - Create: `.python-version`
 - Create: `uv.lock` (generated)
 
-- [ ] **Step 1: Pin Python 3.13 with uv**
+- [x] **Step 1: Pin Python 3.13 with uv**
 
 ```bash
 uv python pin 3.13
@@ -196,7 +196,7 @@ cat .python-version
 
 Expected: a line starting with `3.13` or `cpython-3.13`.
 
-- [ ] **Step 2: Sync the dev environment (generates `uv.lock`)**
+- [x] **Step 2: Sync the dev environment (generates `uv.lock`)**
 
 ```bash
 uv sync --group dev
@@ -204,7 +204,7 @@ uv sync --group dev
 
 This installs core deps + dev group. Framework extras are not installed in bootstrap (they need the actual library wheels to exist). Expected: resolves and locks all core + dev dependencies; `uv.lock` is created/updated.
 
-- [ ] **Step 3: Verify lock file is present**
+- [x] **Step 3: Verify lock file is present**
 
 ```bash
 ls -lh uv.lock
@@ -212,7 +212,7 @@ ls -lh uv.lock
 
 Expected: file exists, non-zero size.
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add .python-version uv.lock
@@ -240,7 +240,7 @@ git commit -m "chore: pin Python 3.13 and add uv.lock"
 - Create: `src/sleuth/autogen/__init__.py`
 - Create: `src/sleuth/mcp/__init__.py`
 
-- [ ] **Step 1: Create the directory tree**
+- [x] **Step 1: Create the directory tree**
 
 ```bash
 mkdir -p src/sleuth/engine
@@ -258,13 +258,13 @@ mkdir -p src/sleuth/autogen
 mkdir -p src/sleuth/mcp
 ```
 
-- [ ] **Step 2: Create `src/sleuth/_version.py`**
+- [x] **Step 2: Create `src/sleuth/_version.py`**
 
 ```python
 __version__ = "0.1.0"
 ```
 
-- [ ] **Step 3: Create `src/sleuth/__init__.py`**
+- [x] **Step 3: Create `src/sleuth/__init__.py`**
 
 ```python
 """
@@ -279,7 +279,7 @@ from sleuth._version import __version__
 __all__ = ["__version__"]
 ```
 
-- [ ] **Step 4: Create all remaining empty `__init__.py` stubs**
+- [x] **Step 4: Create all remaining empty `__init__.py` stubs**
 
 Each file below should contain exactly one line:
 
@@ -310,7 +310,7 @@ for pkg in engine backends memory llm langchain langgraph llamaindex openai_agen
 done
 ```
 
-- [ ] **Step 5: Verify the package is importable**
+- [x] **Step 5: Verify the package is importable**
 
 ```bash
 uv run python -c "import sleuth; print(sleuth.__version__)"
@@ -318,7 +318,7 @@ uv run python -c "import sleuth; print(sleuth.__version__)"
 
 Expected output: `0.1.0`
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add src/
@@ -342,7 +342,7 @@ git commit -m "feat: add src/sleuth package skeleton with empty __init__.py stub
 - Create: `tests/integration/__init__.py`
 - Create: `tests/perf/__init__.py`
 
-- [ ] **Step 1: Write the failing test for `respx_mock` fixture**
+- [x] **Step 1: Write the failing test for `respx_mock` fixture**
 
 Create `tests/test_conftest_bootstrap.py`:
 
@@ -370,7 +370,7 @@ async def test_respx_mock_fixture_is_active(respx_mock):
         assert response.text == "hello"
 ```
 
-- [ ] **Step 2: Run the test — expected FAIL (fixtures not defined yet)**
+- [x] **Step 2: Run the test — expected FAIL (fixtures not defined yet)**
 
 ```bash
 uv run pytest tests/test_conftest_bootstrap.py -v
@@ -382,7 +382,7 @@ ERRORS
 fixture 'tmp_corpus' not found
 ```
 
-- [ ] **Step 3: Create the test directory tree**
+- [x] **Step 3: Create the test directory tree**
 
 ```bash
 mkdir -p tests/contract tests/engine tests/backends tests/memory tests/llm tests/snapshots tests/adapters tests/integration tests/perf
@@ -405,7 +405,7 @@ touch tests/integration/__init__.py
 touch tests/perf/__init__.py
 ```
 
-- [ ] **Step 4: Create `tests/conftest.py` with `tmp_corpus` and `respx_mock` fixtures**
+- [x] **Step 4: Create `tests/conftest.py` with `tmp_corpus` and `respx_mock` fixtures**
 
 ```python
 """
@@ -469,7 +469,7 @@ def respx_mock() -> Generator[respx_module.MockRouter, None, None]:
         yield mock
 ```
 
-- [ ] **Step 5: Run the test — expected PASS**
+- [x] **Step 5: Run the test — expected PASS**
 
 ```bash
 uv run pytest tests/test_conftest_bootstrap.py -v
@@ -482,7 +482,7 @@ PASSED tests/test_conftest_bootstrap.py::test_respx_mock_fixture_is_active
 2 passed
 ```
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add tests/
@@ -496,7 +496,7 @@ git commit -m "test: add tests/conftest.py with tmp_corpus and respx_mock fixtur
 **Files:**
 - Create: `.pre-commit-config.yaml`
 
-- [ ] **Step 1: Create `.pre-commit-config.yaml`**
+- [x] **Step 1: Create `.pre-commit-config.yaml`**
 
 ```yaml
 # .pre-commit-config.yaml
@@ -545,7 +545,7 @@ repos:
         exclude: uv\.lock
 ```
 
-- [ ] **Step 2: Generate `detect-secrets` baseline (required before first run)**
+- [x] **Step 2: Generate `detect-secrets` baseline (required before first run)**
 
 ```bash
 uv run detect-secrets scan > .secrets.baseline
@@ -557,7 +557,7 @@ Expected: creates `.secrets.baseline` (JSON file). Inspect it:
 cat .secrets.baseline | head -20
 ```
 
-- [ ] **Step 3: Install pre-commit hooks**
+- [x] **Step 3: Install pre-commit hooks**
 
 ```bash
 uv run pre-commit install --hook-type pre-commit --hook-type commit-msg
@@ -569,7 +569,7 @@ pre-commit installed at .git/hooks/pre-commit
 pre-commit installed at .git/hooks/commit-msg
 ```
 
-- [ ] **Step 4: Run pre-commit against all files (dry-run validation)**
+- [x] **Step 4: Run pre-commit against all files (dry-run validation)**
 
 ```bash
 uv run pre-commit run --all-files
@@ -577,7 +577,7 @@ uv run pre-commit run --all-files
 
 Expected: all hooks pass (ruff, ruff-format, mypy, check-yaml, check-toml, end-of-file-fixer, trailing-whitespace, detect-secrets). If `end-of-file-fixer` modifies files, re-run until clean.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add .pre-commit-config.yaml .secrets.baseline
@@ -591,13 +591,13 @@ git commit -m "chore: add pre-commit config (ruff, mypy, commitizen, detect-secr
 **Files:**
 - Create: `.github/workflows/ci.yml`
 
-- [ ] **Step 1: Create `.github/workflows/` directory**
+- [x] **Step 1: Create `.github/workflows/` directory**
 
 ```bash
 mkdir -p .github/workflows
 ```
 
-- [ ] **Step 2: Create `.github/workflows/ci.yml`**
+- [x] **Step 2: Create `.github/workflows/ci.yml`**
 
 ```yaml
 # .github/workflows/ci.yml
@@ -667,7 +667,7 @@ jobs:
       - run: uv run pip-audit --strict
 ```
 
-- [ ] **Step 3: Validate YAML syntax**
+- [x] **Step 3: Validate YAML syntax**
 
 ```bash
 uv run python -c "import yaml; yaml.safe_load(open('.github/workflows/ci.yml'))"
@@ -675,7 +675,7 @@ uv run python -c "import yaml; yaml.safe_load(open('.github/workflows/ci.yml'))"
 
 Expected: no output (no error).
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add .github/workflows/ci.yml
@@ -689,7 +689,7 @@ git commit -m "ci: add CI workflow (lint, unit tests matrix, security audit)"
 **Files:**
 - Create: `.github/workflows/integration.yml`
 
-- [ ] **Step 1: Create `.github/workflows/integration.yml`**
+- [x] **Step 1: Create `.github/workflows/integration.yml`**
 
 ```yaml
 # .github/workflows/integration.yml
@@ -722,7 +722,7 @@ jobs:
           uv run pytest -m integration -v --tb=short
 ```
 
-- [ ] **Step 2: Validate YAML syntax**
+- [x] **Step 2: Validate YAML syntax**
 
 ```bash
 uv run python -c "import yaml; yaml.safe_load(open('.github/workflows/integration.yml'))"
@@ -730,7 +730,7 @@ uv run python -c "import yaml; yaml.safe_load(open('.github/workflows/integratio
 
 Expected: no output (no error).
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 git add .github/workflows/integration.yml
@@ -744,7 +744,7 @@ git commit -m "ci: add nightly integration test workflow"
 **Files:**
 - Create: `.github/workflows/perf.yml`
 
-- [ ] **Step 1: Create `.github/workflows/perf.yml`**
+- [x] **Step 1: Create `.github/workflows/perf.yml`**
 
 ```yaml
 # .github/workflows/perf.yml
@@ -783,7 +783,7 @@ jobs:
           path: perf-results.json
 ```
 
-- [ ] **Step 2: Validate YAML syntax**
+- [x] **Step 2: Validate YAML syntax**
 
 ```bash
 uv run python -c "import yaml; yaml.safe_load(open('.github/workflows/perf.yml'))"
@@ -791,7 +791,7 @@ uv run python -c "import yaml; yaml.safe_load(open('.github/workflows/perf.yml')
 
 Expected: no output (no error).
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 git add .github/workflows/perf.yml
@@ -805,7 +805,7 @@ git commit -m "ci: add performance regression workflow"
 **Files:**
 - Create: `.github/workflows/release.yml`
 
-- [ ] **Step 1: Create `.github/workflows/release.yml`**
+- [x] **Step 1: Create `.github/workflows/release.yml`**
 
 ```yaml
 # .github/workflows/release.yml
@@ -864,7 +864,7 @@ jobs:
           make_latest: true
 ```
 
-- [ ] **Step 2: Create minimal `cliff.toml` for git-cliff**
+- [x] **Step 2: Create minimal `cliff.toml` for git-cliff**
 
 ```toml
 # cliff.toml — git-cliff configuration for CHANGELOG generation
@@ -905,7 +905,7 @@ filter_commits = false
 tag_pattern = "v[0-9]*"
 ```
 
-- [ ] **Step 3: Validate YAML syntax**
+- [x] **Step 3: Validate YAML syntax**
 
 ```bash
 uv run python -c "import yaml; yaml.safe_load(open('.github/workflows/release.yml'))"
@@ -913,7 +913,7 @@ uv run python -c "import yaml; yaml.safe_load(open('.github/workflows/release.ym
 
 Expected: no output (no error).
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add .github/workflows/release.yml cliff.toml
@@ -927,7 +927,7 @@ git commit -m "ci: add release workflow (uv build, PyPI OIDC, git-cliff CHANGELO
 **Files:**
 - Create: `.github/dependabot.yml`
 
-- [ ] **Step 1: Create `.github/dependabot.yml`**
+- [x] **Step 1: Create `.github/dependabot.yml`**
 
 ```yaml
 # .github/dependabot.yml
@@ -951,7 +951,7 @@ updates:
     labels: ["dependencies", "github-actions"]
 ```
 
-- [ ] **Step 2: Validate YAML syntax**
+- [x] **Step 2: Validate YAML syntax**
 
 ```bash
 uv run python -c "import yaml; yaml.safe_load(open('.github/dependabot.yml'))"
@@ -959,7 +959,7 @@ uv run python -c "import yaml; yaml.safe_load(open('.github/dependabot.yml'))"
 
 Expected: no output (no error).
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 git add .github/dependabot.yml
@@ -973,7 +973,7 @@ git commit -m "chore: add Dependabot config (weekly Python + Actions updates)"
 **Files:**
 - Create: `CONTRIBUTING.md`
 
-- [ ] **Step 1: Create `CONTRIBUTING.md`**
+- [x] **Step 1: Create `CONTRIBUTING.md`**
 
 ```markdown
 # Contributing to agent-sleuth
@@ -1087,47 +1087,47 @@ The following steps cannot be automated — a human with repo admin rights must 
 
 ### Branch protection
 
-- [ ] On GitHub → Settings → Branches → Add branch protection rule:
+- [x] On GitHub → Settings → Branches → Add branch protection rule:
   - Pattern: `main`
   - Require a pull request before merging: ✓ (1 approval)
   - Require status checks to pass: ✓ → select `lint`, `test (3.13 / ubuntu-latest)`
   - Require branches to be up to date before merging: ✓
   - Include administrators: ✓
   - Restrict who can push: ✓ → only maintainers
-- [ ] Repeat for pattern: `develop` (same settings)
+- [x] Repeat for pattern: `develop` (same settings)
 
 ### PyPI Trusted Publisher (OIDC — no long-lived tokens)
 
-- [ ] On PyPI → Publishing → Add a new pending publisher:
+- [x] On PyPI → Publishing → Add a new pending publisher:
   - PyPI project name: `agent-sleuth`
   - Owner: `<github-org>`
   - Repository name: `agent-sleuth`
   - Workflow filename: `release.yml`
   - Environment name: `release`
-- [ ] Confirm there are **no** `PYPI_TOKEN` secrets in GitHub — OIDC replaces them.
+- [x] Confirm there are **no** `PYPI_TOKEN` secrets in GitHub — OIDC replaces them.
 
 ### GPG / SSH signing key for release tags
 
-- [ ] Each maintainer who will sign release tags must:
+- [x] Each maintainer who will sign release tags must:
   1. Generate a GPG key: `gpg --full-generate-key` (RSA 4096 or Ed25519)
   2. Export the public key: `gpg --armor --export <key-id>`
   3. Upload to GitHub → Settings → SSH and GPG keys → New GPG key
   4. Configure git locally: `git config --global user.signingkey <key-id>` and `git config --global commit.gpgsign true`
-- [ ] Verify a test tag signs cleanly: `git tag -s vtest -m "test" && git tag -v vtest && git tag -d vtest`
+- [x] Verify a test tag signs cleanly: `git tag -s vtest -m "test" && git tag -v vtest && git tag -d vtest`
 
 ### GitHub Secret Scanning + push protection
 
-- [ ] On GitHub → Settings → Security → Code security and analysis:
+- [x] On GitHub → Settings → Security → Code security and analysis:
   - Secret scanning: Enable ✓
   - Push protection: Enable ✓
 
 ### Dependabot auto-merge (optional)
 
-- [ ] On GitHub → Settings → General → Allow auto-merge: Enable ✓
-- [ ] Create a Dependabot auto-merge GitHub Actions workflow (or use the merge queue) to auto-approve and merge Dependabot PRs with only patch-level version bumps after CI passes.
+- [x] On GitHub → Settings → General → Allow auto-merge: Enable ✓
+- [x] Create a Dependabot auto-merge GitHub Actions workflow (or use the merge queue) to auto-approve and merge Dependabot PRs with only patch-level version bumps after CI passes.
 ```
 
-- [ ] **Step 2: Commit**
+- [x] **Step 2: Commit**
 
 ```bash
 git add CONTRIBUTING.md
@@ -1140,7 +1140,7 @@ git commit -m "docs: add CONTRIBUTING.md with setup, branch model, and manual ch
 
 **Files:** none (git operation only)
 
-- [ ] **Step 1: Push the feature branch to remote**
+- [x] **Step 1: Push the feature branch to remote**
 
 ```bash
 git push -u origin feature/phase-0-bootstrap
@@ -1148,7 +1148,7 @@ git push -u origin feature/phase-0-bootstrap
 
 Expected: branch pushed to GitHub; CI workflow triggers.
 
-- [ ] **Step 2: Merge feature branch into `main` via PR**
+- [x] **Step 2: Merge feature branch into `main` via PR**
 
 On GitHub, open a PR from `feature/phase-0-bootstrap` → `main`. Title: `feat: Phase 0 — Bootstrap (uv project, pre-commit, CI/CD, package skeleton)`. Wait for CI to pass, then merge.
 
@@ -1159,7 +1159,7 @@ git checkout main
 git pull
 ```
 
-- [ ] **Step 3: Create `develop` branch off the newly merged `main`**
+- [x] **Step 3: Create `develop` branch off the newly merged `main`**
 
 ```bash
 git checkout -b develop
@@ -1171,7 +1171,7 @@ Expected:
 Branch 'develop' set up to track remote branch 'develop' from 'origin'.
 ```
 
-- [ ] **Step 4: Verify branches on remote**
+- [x] **Step 4: Verify branches on remote**
 
 ```bash
 git branch -r
@@ -1184,7 +1184,7 @@ Expected output includes:
   origin/feature/phase-0-bootstrap
 ```
 
-- [ ] **Step 5: Complete the manual checklist**
+- [x] **Step 5: Complete the manual checklist**
 
 At this point a maintainer must perform the manual steps documented in `CONTRIBUTING.md`:
 - Configure branch protection on `main` and `develop`.
@@ -1200,7 +1200,7 @@ These are not automated; see the "Manual setup checklist" section in `CONTRIBUTI
 
 **Files:** none
 
-- [ ] **Step 1: Verify full test suite passes on `develop`**
+- [x] **Step 1: Verify full test suite passes on `develop`**
 
 ```bash
 git checkout develop
@@ -1209,7 +1209,7 @@ uv run pytest -m "not integration and not perf and not adapter" -v
 
 Expected: all bootstrap smoke tests pass (the `test_conftest_bootstrap.py` tests from Task 5).
 
-- [ ] **Step 2: Verify ruff and mypy are clean**
+- [x] **Step 2: Verify ruff and mypy are clean**
 
 ```bash
 uv run ruff check . && uv run ruff format --check . && uv run mypy src/sleuth
@@ -1217,7 +1217,7 @@ uv run ruff check . && uv run ruff format --check . && uv run mypy src/sleuth
 
 Expected: no errors, no diffs.
 
-- [ ] **Step 3: Verify package is buildable**
+- [x] **Step 3: Verify package is buildable**
 
 ```bash
 uv build
@@ -1226,7 +1226,7 @@ ls dist/
 
 Expected: `dist/agent_sleuth-0.1.0-py3-none-any.whl` and `dist/agent_sleuth-0.1.0.tar.gz` (or equivalent).
 
-- [ ] **Step 4: Clean up bootstrap smoke-test file**
+- [x] **Step 4: Clean up bootstrap smoke-test file**
 
 The `tests/test_conftest_bootstrap.py` file was only needed to drive TDD for Task 5's conftest fixtures. Remove it now that the fixtures are proven:
 
@@ -1235,7 +1235,7 @@ git rm tests/test_conftest_bootstrap.py
 git commit -m "test: remove transient conftest bootstrap smoke test"
 ```
 
-- [ ] **Step 5: Confirm `develop` is the active integration branch**
+- [x] **Step 5: Confirm `develop` is the active integration branch**
 
 ```bash
 git log --oneline -10
