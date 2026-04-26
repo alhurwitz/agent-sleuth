@@ -47,7 +47,7 @@ jobs:
             -n auto \
             -v
       - name: Upload coverage
-        uses: codecov/codecov-action@v5
+        uses: codecov/codecov-action@v6
         if: matrix.os == 'ubuntu-latest' && matrix.python-version == '3.13'
         with:
           files: coverage.xml
