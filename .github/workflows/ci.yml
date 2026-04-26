@@ -18,7 +18,7 @@ jobs:
       - uses: astral-sh/setup-uv@v5
         with:
           enable-cache: true
-      - run: uv sync --frozen --group dev
+      - run: uv sync --frozen --all-extras --group dev
       - run: uv run ruff check .
       - run: uv run ruff format --check .
       - run: uv run mypy src/sleuth
@@ -37,7 +37,7 @@ jobs:
         with:
           enable-cache: true
           python-version: ${{ matrix.python-version }}
-      - run: uv sync --frozen --group dev
+      - run: uv sync --frozen --all-extras --group dev
       - name: Run unit tests with coverage
         run: |
           uv run pytest -m "not integration and not perf and not adapter" \
@@ -61,7 +61,7 @@ jobs:
       - uses: astral-sh/setup-uv@v5
         with:
           enable-cache: true
-      - run: uv sync --frozen --group dev
+      - run: uv sync --frozen --all-extras --group dev
       # --skip-editable so pip-audit doesn't try to look up agent-sleuth itself
       # on PyPI before the first release.
       # --ignore-vuln GHSA-58qw-9mgm-455v: pip <=26.0.1 zip/tar interpretation

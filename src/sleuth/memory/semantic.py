@@ -25,12 +25,31 @@ import hashlib
 import math
 import time
 from collections.abc import Sequence
-from typing import Any, Protocol, runtime_checkable
-
-import numpy as np
+from typing import TYPE_CHECKING, Any, Protocol, runtime_checkable
 
 from sleuth.events import CacheHitEvent
 from sleuth.memory.cache import Cache
+
+if TYPE_CHECKING:
+    pass
+
+
+def _require_numpy() -> Any:
+    """Lazy-import numpy so this module loads without `agent-sleuth[semantic]`.
+
+    SemanticCache and FastembedEmbedder both need numpy at runtime; calling
+    them without the `semantic` extra installed raises a clear ImportError.
+    """
+    try:
+        import numpy as np
+
+        return np
+    except ImportError as e:
+        raise ImportError(
+            "SemanticCache / FastembedEmbedder require numpy. "
+            "Install with: pip install 'agent-sleuth[semantic]'"
+        ) from e
+
 
 # ---------------------------------------------------------------------------
 # Embedder protocol  (conventions §5.6 — canonical shape)
@@ -129,6 +148,7 @@ class FastembedEmbedder:
     async def embed(self, texts: Sequence[str]) -> list[list[float]]:
         import asyncio
 
+        np = _require_numpy()
         model = self._load()
         loop = asyncio.get_event_loop()
         # fastembed is synchronous; offload to thread pool
@@ -157,6 +177,7 @@ def _entry_key(query: str) -> str:
 
 def _cosine(a: list[float], b: list[float]) -> float:
     """Return cosine similarity of two unit-norm float lists."""
+    np = _require_numpy()
     arr_a = np.asarray(a, dtype=np.float32)
     arr_b = np.asarray(b, dtype=np.float32)
     return float(np.dot(arr_a, arr_b))

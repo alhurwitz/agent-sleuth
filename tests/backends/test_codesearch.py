@@ -467,8 +467,15 @@ async def test_codesearch_searches_js_files(tmp_path: Path) -> None:
 
 
 @pytest.mark.unit
-async def test_embedder_rerank_raises_without_extra() -> None:
-    """Embedder.rerank raises ImportError when rerank=True and code-embed not installed."""
+async def test_embedder_rerank_raises_without_extra(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Embedder.rerank raises ImportError when fastembed is unavailable.
+
+    CI runs with --all-extras so fastembed is installed; simulate the
+    "missing extra" case by hiding the module from imports.
+    """
+    import sys
+
+    monkeypatch.setitem(sys.modules, "fastembed", None)
     embedder = Embedder(rerank=True)
     chunk = _make_chunk("some code", 1)
     with pytest.raises(ImportError):
