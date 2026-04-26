@@ -17,7 +17,7 @@ jobs:
         with:
           # fetch develop baseline for comparison
           fetch-depth: 0
-      - uses: astral-sh/setup-uv@v5
+      - uses: astral-sh/setup-uv@v7
         with:
           enable-cache: true
       - run: uv sync --frozen --group dev
