@@ -62,6 +62,8 @@ dev = [
     "commitizen>=3.27",
     "detect-secrets>=1.5",
     "pip-audit>=2.7",
+    "anthropic>=0.97.0",
+    "openai>=2.32.0",
 ]
 
 [project.scripts]
@@ -90,6 +92,10 @@ mypy_path = "src"
 [[tool.mypy.overrides]]
 module = "tests.*"
 disallow_untyped_defs = false
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = ["anthropic", "anthropic.*", "openai", "openai.*"]
 ignore_missing_imports = true
 
 [tool.pytest.ini_options]

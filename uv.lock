@@ -106,10 +106,12 @@ web-fetch = [
 
 [package.dev-dependencies]
 dev = [
+    { name = "anthropic" },
     { name = "commitizen" },
     { name = "detect-secrets" },
     { name = "hypothesis" },
     { name = "mypy" },
+    { name = "openai" },
     { name = "pip-audit" },
     { name = "pre-commit" },
     { name = "pytest" },
@@ -161,10 +163,12 @@ provides-extras = ["anthropic", "openai", "langchain", "langgraph", "llamaindex"
 
 [package.metadata.requires-dev]
 dev = [
+    { name = "anthropic", specifier = ">=0.97.0" },
     { name = "commitizen", specifier = ">=3.27" },
     { name = "detect-secrets", specifier = ">=1.5" },
     { name = "hypothesis", specifier = ">=6.100" },
     { name = "mypy", specifier = ">=1.11" },
+    { name = "openai", specifier = ">=2.32.0" },
     { name = "pip-audit", specifier = ">=2.7" },
     { name = "pre-commit", specifier = ">=3.7" },
     { name = "pytest", specifier = ">=8.0" },
