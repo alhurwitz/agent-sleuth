@@ -1,12 +1,17 @@
 # .github/workflows/perf.yml
-# Triggers: pull_request to develop or main.
-# Measures end-to-end latency + RunStats.first_token_ms.
-# Fails if first-token median > 1500 ms on fast path or p50/p95 regress >10%.
+# Triggers: pull_request targeting develop or main.
+# Gates (spec §16.6):
+#   1. first_token_ms median (of 5 runs) on fast path must be < 1500 ms.
+#   2. p50 and p95 of any benchmark must not regress > 10% vs develop baseline.
+#
+# On develop merges: update the committed baseline JSON.
 name: Performance regression
 
 on:
   pull_request:
     branches: [develop, main]
+  push:
+    branches: [develop] # update baseline on develop merges
 
 jobs:
   perf:
@@ -15,31 +20,99 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          # fetch develop baseline for comparison
+          # Fetch full history so we can check out develop baseline on PRs.
           fetch-depth: 0
+
       - uses: astral-sh/setup-uv@v5
         with:
           enable-cache: true
+
       - run: uv sync --frozen --group dev
-      - name: Check for perf tests
-        id: has_perf
-        run: |
-          if find tests/perf -name "test_*.py" 2>/dev/null | grep -q .; then
-            echo "exists=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "exists=false" >> "$GITHUB_OUTPUT"
-            echo "::notice::No perf tests yet (Phase 11 will populate tests/perf/). Skipping benchmark run."
-          fi
-      - name: Run perf suite
-        if: steps.has_perf.outputs.exists == 'true'
+
+      - name: Run perf suite (5 rounds minimum to dampen noise)
         run: |
           uv run pytest -m perf \
             --benchmark-json=perf-results.json \
             --benchmark-min-rounds=5 \
-            -v
-      - name: Upload benchmark results
-        if: steps.has_perf.outputs.exists == 'true'
+            --benchmark-sort=fullname \
+            -q
+
+      - name: Upload benchmark results artifact
         uses: actions/upload-artifact@v4
         with:
           name: perf-results-${{ github.sha }}
           path: perf-results.json
+
+      - name: Gate — first_token_ms median < 1500 ms and p50/p95 regression < 10%
+        run: |
+          python - << 'PYTHON'
+          import json, sys, pathlib
+
+          # Load current run results.
+          results = json.loads(pathlib.Path("perf-results.json").read_text())
+
+          # Load committed baseline (from the repo checkout — always develop's baseline).
+          baseline_path = pathlib.Path("tests/perf/baselines/develop.json")
+          if not baseline_path.exists():
+              print("WARNING: No baseline file found — skipping regression check.")
+              sys.exit(0)
+
+          baseline = json.loads(baseline_path.read_text())
+
+          failures = []
+
+          for bench in results.get("benchmarks", []):
+              name = bench["name"]
+              stats = bench["stats"]
+              raw_data = stats.get("data", [])
+
+              # Convert seconds -> ms.
+              median_ms = stats.get("median", stats.get("mean", 0.0)) * 1000
+              if raw_data:
+                  sorted_data = sorted(raw_data)
+                  p95_ms = sorted_data[min(int(len(sorted_data) * 0.95), len(sorted_data) - 1)] * 1000
+              else:
+                  p95_ms = stats.get("max", stats.get("median", 0.0)) * 1000
+
+              # Gate 1: fast-path first_token_ms must be < 1500 ms.
+              if "fast_path_first_token" in name:
+                  if median_ms > 1500:
+                      failures.append(
+                          f"FAIL [{name}]: first_token_ms median {median_ms:.1f}ms > 1500ms gate"
+                      )
+
+              # Gate 2: p50/p95 regression vs baseline.
+              if name in baseline:
+                  base_median = baseline[name]["median_ms"]
+                  base_p95 = baseline[name]["p95_ms"]
+
+                  if base_median > 0 and (median_ms - base_median) / base_median > 0.10:
+                      failures.append(
+                          f"FAIL [{name}]: p50 regressed {median_ms:.1f}ms vs baseline {base_median:.1f}ms (>10%)"
+                      )
+                  if base_p95 > 0 and (p95_ms - base_p95) / base_p95 > 0.10:
+                      failures.append(
+                          f"FAIL [{name}]: p95 regressed {p95_ms:.1f}ms vs baseline {base_p95:.1f}ms (>10%)"
+                      )
+
+              print(f"  {name}: median={median_ms:.2f}ms  p95={p95_ms:.2f}ms")
+
+          if failures:
+              print("\nPerformance gate FAILED:")
+              for f in failures:
+                  print(f"  {f}")
+              sys.exit(1)
+          else:
+              print("\nAll performance gates passed.")
+          PYTHON
+
+      - name: Update baseline on develop merge (push to develop only)
+        if: github.event_name == 'push' && github.ref == 'refs/heads/develop'
+        run: |
+          uv run python scripts/perf-baseline.py
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add tests/perf/baselines/develop.json
+          # Only commit if baseline changed.
+          git diff --cached --quiet || git commit -m "perf: update develop baseline [skip ci]"
+          git push
