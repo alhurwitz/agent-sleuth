@@ -135,6 +135,8 @@ module = [
     "tree_sitter_python",
     "tree_sitter_javascript",
     "tree_sitter_typescript",
+    # Phase 8: MCP SDK (no type stubs)
+    "mcp", "mcp.*",
 ]
 ignore_missing_imports = true
 
