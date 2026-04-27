@@ -90,7 +90,7 @@ dev = [
 ]
 
 [project.scripts]
-# Phase 8 adds: sleuth-mcp = "sleuth.mcp.__main__:main"
+sleuth-mcp = "sleuth.mcp.__main__:main"
 
 [build-system]
 requires = ["hatchling>=1.25"]
@@ -135,6 +135,9 @@ module = [
     "tree_sitter_python",
     "tree_sitter_javascript",
     "tree_sitter_typescript",
+    # Phase 8: MCP SDK and uvicorn (no type stubs in pre-commit env)
+    "mcp", "mcp.*",
+    "uvicorn", "uvicorn.*",
 ]
 ignore_missing_imports = true
 
