@@ -16,6 +16,17 @@ from sleuth import Sleuth
 from sleuth.types import Chunk
 
 
+def _run_in_new_loop(coro: Any) -> Any:
+    """Run *coro* in a fresh event loop without disturbing the current loop policy."""
+    import asyncio
+
+    new_loop = asyncio.new_event_loop()
+    try:
+        return new_loop.run_until_complete(coro)
+    finally:
+        new_loop.close()
+
+
 def _chunk_to_document(chunk: Chunk) -> Document:
     return Document(
         page_content=chunk.text,
@@ -57,16 +68,17 @@ class SleuthRetriever(BaseRetriever):  # type: ignore[misc]
             return docs
 
         try:
-            loop = asyncio.get_event_loop()
-            if loop.is_running():
-                import concurrent.futures
-
-                with concurrent.futures.ThreadPoolExecutor() as pool:
-                    future = pool.submit(asyncio.run, _collect())
-                    return future.result()
-            return loop.run_until_complete(_collect())
+            running_loop = asyncio.get_running_loop()
         except RuntimeError:
-            return asyncio.run(_collect())
+            running_loop = None
+
+        if running_loop is not None and running_loop.is_running():
+            import concurrent.futures
+
+            with concurrent.futures.ThreadPoolExecutor() as pool:
+                future = pool.submit(_run_in_new_loop, _collect())
+                return future.result()
+        return _run_in_new_loop(_collect())
 
     async def _aget_relevant_documents(
         self, query: str, *, run_manager: Any = None

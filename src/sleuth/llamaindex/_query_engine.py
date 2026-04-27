@@ -17,6 +17,17 @@ from sleuth import Sleuth
 from sleuth.events import TokenEvent
 
 
+def _run_in_new_loop(coro: Any) -> Any:
+    """Run *coro* in a fresh event loop without disturbing the current loop policy."""
+    import asyncio
+
+    new_loop = asyncio.new_event_loop()
+    try:
+        return new_loop.run_until_complete(coro)
+    finally:
+        new_loop.close()
+
+
 class SleuthQueryEngine(BaseQueryEngine):  # type: ignore[misc]
     """Expose Sleuth as a LlamaIndex QueryEngine.
 
@@ -37,16 +48,17 @@ class SleuthQueryEngine(BaseQueryEngine):  # type: ignore[misc]
         import asyncio
 
         try:
-            loop = asyncio.get_event_loop()
-            if loop.is_running():
-                import concurrent.futures
-
-                with concurrent.futures.ThreadPoolExecutor() as pool:
-                    future = pool.submit(asyncio.run, self._aquery(query_bundle))
-                    return future.result()
-            return loop.run_until_complete(self._aquery(query_bundle))
+            running_loop = asyncio.get_running_loop()
         except RuntimeError:
-            return asyncio.run(self._aquery(query_bundle))
+            running_loop = None
+
+        if running_loop is not None and running_loop.is_running():
+            import concurrent.futures
+
+            with concurrent.futures.ThreadPoolExecutor() as pool:
+                future = pool.submit(_run_in_new_loop, self._aquery(query_bundle))
+                return future.result()
+        return _run_in_new_loop(self._aquery(query_bundle))
 
     def _get_prompt_modules(self) -> dict[str, Any]:
         """Return empty prompt modules (Sleuth manages prompting internally)."""

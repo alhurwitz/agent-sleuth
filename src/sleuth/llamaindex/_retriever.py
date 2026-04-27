@@ -16,6 +16,17 @@ from sleuth import Sleuth
 from sleuth.types import Chunk
 
 
+def _run_in_new_loop(coro: Any) -> Any:
+    """Run *coro* in a fresh event loop without disturbing the current loop policy."""
+    import asyncio
+
+    new_loop = asyncio.new_event_loop()
+    try:
+        return new_loop.run_until_complete(coro)
+    finally:
+        new_loop.close()
+
+
 def _chunk_to_node_with_score(chunk: Chunk) -> NodeWithScore:
     node = TextNode(
         text=chunk.text,
@@ -45,16 +56,17 @@ class SleuthRetriever(BaseRetriever):  # type: ignore[misc]
         import asyncio
 
         try:
-            loop = asyncio.get_event_loop()
-            if loop.is_running():
-                import concurrent.futures
-
-                with concurrent.futures.ThreadPoolExecutor() as pool:
-                    future = pool.submit(asyncio.run, self._aretrieve(query_bundle))
-                    return future.result()
-            return loop.run_until_complete(self._aretrieve(query_bundle))
+            running_loop = asyncio.get_running_loop()
         except RuntimeError:
-            return asyncio.run(self._aretrieve(query_bundle))
+            running_loop = None
+
+        if running_loop is not None and running_loop.is_running():
+            import concurrent.futures
+
+            with concurrent.futures.ThreadPoolExecutor() as pool:
+                future = pool.submit(_run_in_new_loop, self._aretrieve(query_bundle))
+                return future.result()
+        return _run_in_new_loop(self._aretrieve(query_bundle))
 
     async def _aretrieve(self, query_bundle: QueryBundle) -> list[NodeWithScore]:
         nodes: list[NodeWithScore] = []

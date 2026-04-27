@@ -168,8 +168,8 @@ module = [
     "sleuth.autogen.*",
 ]
 # Framework adapters subclass from externally-typed bases that lack stubs;
-# misc/unused-ignore suppressed because import resolution differs by env.
-disable_error_code = ["misc", "unused-ignore"]
+# misc/unused-ignore/no-any-return suppressed because import resolution differs by env.
+disable_error_code = ["misc", "unused-ignore", "no-any-return"]
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"

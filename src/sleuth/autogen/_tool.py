@@ -10,6 +10,15 @@ from sleuth import Sleuth
 from sleuth.events import TokenEvent
 
 
+def _run_in_new_loop(coro: Any) -> Any:
+    """Run *coro* in a fresh event loop without disturbing the current loop policy."""
+    new_loop = asyncio.new_event_loop()
+    try:
+        return new_loop.run_until_complete(coro)
+    finally:
+        new_loop.close()
+
+
 def make_sleuth_autogen_tool(
     agent: Sleuth,
     *,
@@ -52,9 +61,9 @@ def make_sleuth_autogen_tool(
             import concurrent.futures
 
             with concurrent.futures.ThreadPoolExecutor() as pool:
-                future = pool.submit(asyncio.run, _collect())
+                future = pool.submit(_run_in_new_loop, _collect())
                 return future.result()
-        return asyncio.run(_collect())
+        return _run_in_new_loop(_collect())
 
     sleuth_search.__name__ = name
     sleuth_search.__doc__ = description

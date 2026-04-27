@@ -16,6 +16,16 @@ from pydantic import BaseModel, Field
 from sleuth import Sleuth
 from sleuth.events import Event, TokenEvent
 
+
+def _run_in_new_loop(coro: Any) -> Any:
+    """Run *coro* in a fresh event loop without disturbing the current loop policy."""
+    new_loop = asyncio.new_event_loop()
+    try:
+        return new_loop.run_until_complete(coro)
+    finally:
+        new_loop.close()
+
+
 OnEventCallback = Callable[[Event], None] | None
 
 
@@ -71,12 +81,13 @@ class SleuthCrewAITool(BaseTool):  # type: ignore[misc]
             loop = None
 
         if loop is not None and loop.is_running():
+            # Called from within an async context — run in a thread
             import concurrent.futures
 
             with concurrent.futures.ThreadPoolExecutor() as pool:
-                future = pool.submit(asyncio.run, _collect())
+                future = pool.submit(_run_in_new_loop, _collect())
                 return future.result()
-        return asyncio.run(_collect())
+        return _run_in_new_loop(_collect())
 
     async def _arun(self, query: str, **kwargs: Any) -> str:
         """Async implementation for forward-compat."""
