@@ -1,1 +1,1 @@
-# stub — populated by the phase that owns this module
+"""MCP server for Sleuth — extras=[mcp]."""

@@ -90,7 +90,7 @@ dev = [
 ]
 
 [project.scripts]
-# Phase 8 adds: sleuth-mcp = "sleuth.mcp.__main__:main"
+sleuth-mcp = "sleuth.mcp.__main__:main"
 
 [build-system]
 requires = ["hatchling>=1.25"]
