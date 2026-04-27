@@ -2,14 +2,15 @@
 
 Routes each query to a ``Depth`` value by inspecting the query text.
 When ``depth`` is already ``"fast"`` or ``"deep"`` the caller's value is passed
-through unchanged.  Phase 3 may replace this with an LLM-backed classifier
-for the ``"auto"`` case only; the Router API is stable.
+through unchanged.  Phase 3 extended the ``Router`` class with ``_is_deep()``
+and added a module-level ``route()`` async-generator convenience wrapper.
 """
 
 from __future__ import annotations
 
 import logging
 import re
+from collections.abc import AsyncIterator
 
 from sleuth.events import RouteEvent
 from sleuth.types import Depth
@@ -36,6 +37,44 @@ _FAST_STARTS = re.compile(
     r"^(what|who|when|where|define|does|is|are|how many|which)\b",
     re.IGNORECASE,
 )
+
+# ---------------------------------------------------------------------------
+# Phase 3: module-level helpers
+# ---------------------------------------------------------------------------
+
+
+# Additional patterns used only by _is_deep (richer than _DEEP_KEYWORDS to catch
+# multi-part queries, research requests, and change-diff patterns).
+_DEEP_EXTRA = re.compile(
+    r"\b(research\b|all\s+(?:the\s+)?ways\b|each\b.{0,40}\bhandle\b"
+    r"|and\b.{0,30}\bwhat\b.{0,30}\bchanged\b"
+    r"|differences?\b"
+    r")",
+    re.IGNORECASE | re.DOTALL,
+)
+
+
+def _is_deep(query: str) -> bool:
+    """Return True if the query heuristically requires deep (multi-step) planning.
+
+    Purely regex/keyword — no LLM calls. Errs on the side of fast when ambiguous.
+    Checks the shared ``_DEEP_KEYWORDS`` pattern plus ``_DEEP_EXTRA`` patterns
+    for research / multi-part / change-diff constructions.
+    """
+    return bool(_DEEP_KEYWORDS.search(query)) or bool(_DEEP_EXTRA.search(query))
+
+
+async def route(query: str, *, depth: Depth = "auto") -> AsyncIterator[RouteEvent]:
+    """Module-level async-generator wrapper around ``Router().route()``.
+
+    Yields a single ``RouteEvent``. The async-generator form lets callers use
+    ``async for event in route(query)`` uniformly with other event-stream sources.
+
+    Args:
+        query: The user's search query.
+        depth: ``"auto"`` to run heuristics; ``"fast"`` / ``"deep"`` pass through.
+    """
+    yield Router().route(query, depth=depth)
 
 
 class Router:

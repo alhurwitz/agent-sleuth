@@ -1,0 +1,50 @@
+# serializer version: 1
+# name: test_deep_mode_event_sequence_snapshot
+  list([
+    dict({
+      'depth': 'deep',
+      'reason': "complexity keyword: 'compare'",
+      'type': 'route',
+    }),
+    dict({
+      'steps': list([
+        dict({
+          'backends': None,
+          'done': False,
+          'query': 'what is OAuth',
+        }),
+        dict({
+          'backends': None,
+          'done': False,
+          'query': 'what is OIDC',
+        }),
+        dict({
+          'backends': list([
+            'docs',
+          ]),
+          'done': False,
+          'query': 'OAuth vs OIDC enterprise',
+        }),
+      ]),
+      'type': 'plan',
+    }),
+    dict({
+      'backend': 'det-web',
+      'error': None,
+      'query': 'OAuth vs OIDC enterprise',
+      'type': 'search',
+    }),
+    dict({
+      'backend': 'det-web',
+      'error': None,
+      'query': 'what is OAuth',
+      'type': 'search',
+    }),
+    dict({
+      'backend': 'det-web',
+      'error': None,
+      'query': 'what is OIDC',
+      'type': 'search',
+    }),
+  ])
+# ---

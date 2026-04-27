@@ -23,7 +23,8 @@ from typing import Literal, TypeVar
 from pydantic import BaseModel
 
 from sleuth.backends.base import Backend
-from sleuth.engine.executor import Executor
+from sleuth.engine.executor import Executor, reflect_loop
+from sleuth.engine.planner import Planner
 from sleuth.engine.router import Router
 from sleuth.engine.synthesizer import Synthesizer
 from sleuth.events import DoneEvent, Event, TokenEvent
@@ -125,13 +126,47 @@ class Sleuth:
         # 1. Route
         route_event = self._router.route(query, depth=depth)
         yield route_event
+        resolved_depth = route_event.depth
 
-        # Phase 1: treat "deep" as "fast" — Phase 3 adds the planner
+        # 2. Execute — deep mode uses Planner + reflect_loop; fast uses single fan-out
+        if resolved_depth == "deep":
+            # Phase 3: deep mode — Planner decomposes query, reflect loop runs it
+            planner = Planner(llm=self._fast_llm)
+            search_events_list: list[object] = []
 
-        # 2. Execute (single-query fan-out)
-        search_events, chunks = await self._executor.run(query)
-        for se in search_events:
-            yield se
+            def _on_search(se: object) -> None:
+                search_events_list.append(se)
+
+            from sleuth.events import PlanEvent as _PlanEvent
+            from sleuth.events import SearchEvent as _SearchEvent
+
+            plan_events: list[_PlanEvent] = []
+
+            def _on_plan(pe: _PlanEvent) -> None:
+                plan_events.append(pe)
+
+            chunks, _iters = await reflect_loop(
+                query=query,
+                planner=planner,
+                backends=self._backends,
+                max_iterations=max_iterations,
+                on_search_event=_on_search,
+                on_plan_event=_on_plan,
+            )
+
+            # Emit plan events first (before search events)
+            for pe in plan_events:
+                yield pe
+            for se in search_events_list:
+                if isinstance(se, _SearchEvent):
+                    yield se
+
+            search_events = [se for se in search_events_list if isinstance(se, _SearchEvent)]
+        else:
+            # Fast mode: single-query fan-out (Phase 1 behaviour)
+            search_events, chunks = await self._executor.run(query)
+            for se in search_events:
+                yield se
 
         # 3. Synthesize
         backends_called = [se.backend for se in search_events if se.error is None]
