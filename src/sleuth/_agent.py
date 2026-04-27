@@ -18,7 +18,7 @@ import asyncio
 import pathlib
 import time
 from collections.abc import AsyncIterator
-from typing import Any, Literal, TypeVar
+from typing import Literal, TypeVar
 
 from pydantic import BaseModel
 
@@ -28,7 +28,8 @@ from sleuth.engine.router import Router
 from sleuth.engine.synthesizer import Synthesizer
 from sleuth.events import DoneEvent, Event, TokenEvent
 from sleuth.llm.base import LLMClient
-from sleuth.memory.cache import Cache, MemoryCache
+from sleuth.memory.cache import Cache, SqliteCache
+from sleuth.memory.semantic import SemanticCache
 from sleuth.memory.session import Session
 from sleuth.types import Depth, Length, Result
 
@@ -45,9 +46,11 @@ class Sleuth:
         backends: One or more ``Backend`` instances to search against.
         fast_llm: Optional faster LLM for routing/planning.  Defaults to ``llm``
             when not supplied — no built-in fast model is imported (spec §15 #3).
-        cache: ``"default"`` (MemoryCache in Phase 1), a ``Cache`` instance, or ``None``
-            to disable caching.
-        semantic_cache: Reserved for Phase 4.  Pass ``False`` (default) or ``None``.
+        cache: ``"default"`` resolves to ``SqliteCache()`` (persistent, per-namespace
+            TTLs), a ``Cache`` instance, or ``None`` to disable caching.
+        semantic_cache: ``True`` to enable ``SemanticCache`` with ``FastembedEmbedder``
+            (requires ``agent-sleuth[semantic]``), a ``SemanticCache`` instance for
+            custom configuration, or ``False`` (default) to disable.
         session: Optional persistent ``Session`` for multi-turn conversations.
     """
 
@@ -58,7 +61,7 @@ class Sleuth:
         *,
         fast_llm: LLMClient | None = None,
         cache: Cache | Literal["default"] | None = "default",
-        semantic_cache: Any = False,
+        semantic_cache: SemanticCache | bool = False,
         session: Session | None = None,
     ) -> None:
         self._llm = llm
@@ -66,10 +69,27 @@ class Sleuth:
         self._backends = backends
         self._session = session
 
+        # Resolve the backing cache
         if cache == "default":
-            self._cache: Cache | None = MemoryCache()
+            self._cache: Cache | None = SqliteCache()
         else:
             self._cache = cache
+
+        # Resolve semantic_cache=True to a SemanticCache using FastembedEmbedder
+        if isinstance(semantic_cache, bool) and semantic_cache:
+            from sleuth.memory.semantic import FastembedEmbedder
+
+            backing = self._cache if self._cache is not None else SqliteCache()
+            self._semantic_cache: SemanticCache | None = SemanticCache(
+                cache=backing,
+                embedder=FastembedEmbedder(),
+                threshold=0.92,
+                window_s=600,
+            )
+        elif isinstance(semantic_cache, SemanticCache):
+            self._semantic_cache = semantic_cache
+        else:
+            self._semantic_cache = None
 
         self._router = Router()
         self._executor = Executor(backends=backends, timeout_s=_DEFAULT_BACKEND_TIMEOUT_S)
