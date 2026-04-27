@@ -1,6 +1,6 @@
 # Phase 2: LocalFiles Backend Implementation Plan
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [x]`) syntax for tracking.
 
 **Goal:** Implement the `LocalFiles` backend — a PageIndex-style hierarchical tree-of-contents indexer and LLM-navigated query engine for local document corpora (markdown, PDF, HTML, Python/JS/TS code).
 
@@ -39,7 +39,7 @@
 **Files:**
 - Modify: `pyproject.toml`
 
-- [ ] **Step 1: Create feature branch**
+- [x] **Step 1: Create feature branch**
 
 ```bash
 git checkout develop
@@ -49,7 +49,7 @@ git checkout -b feature/phase-2-localfiles
 
 Expected: branch `feature/phase-2-localfiles` created, tracking `develop`.
 
-- [ ] **Step 2: Add localfiles optional-dep group to pyproject.toml**
+- [x] **Step 2: Add localfiles optional-dep group to pyproject.toml**
 
 In `pyproject.toml`, under `[project.optional-dependencies]`, add:
 
@@ -66,7 +66,7 @@ localfiles = [
 ]
 ```
 
-- [ ] **Step 3: Add dev deps for test-time availability**
+- [x] **Step 3: Add dev deps for test-time availability**
 
 In `[dependency-groups]` → `dev = [...]`, append:
 
@@ -81,7 +81,7 @@ In `[dependency-groups]` → `dev = [...]`, append:
 "tree-sitter-typescript>=0.23",
 ```
 
-- [ ] **Step 4: Sync and verify**
+- [x] **Step 4: Sync and verify**
 
 ```bash
 uv sync --all-extras --group dev
@@ -90,7 +90,7 @@ uv run python -c "import fitz; import tree_sitter; import aiosqlite; import xxha
 
 Expected output: `all deps ok`
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add pyproject.toml uv.lock
@@ -120,7 +120,7 @@ The three candidates for PDF parsing are:
 3. Font-size-based heading fallback handles PDFs without an embedded TOC.
 4. AGPL-3 license is acceptable for a library that does not embed pymupdf in a compiled binary — users who need commercial licensing can swap the parser via the `PdfParser` interface (see Task 3).
 
-- [ ] **Step 1: Verify the benchmark numbers with a quick script (optional validation step)**
+- [x] **Step 1: Verify the benchmark numbers with a quick script (optional validation step)**
 
 ```bash
 uv run python - <<'EOF'
@@ -158,7 +158,7 @@ EOF
 
 Expected output (approximate): `pymupdf` is fastest and returns the most TOC entries.
 
-- [ ] **Step 2: Commit decision record**
+- [x] **Step 2: Commit decision record**
 
 ```bash
 git commit --allow-empty -m "docs: PDF parser benchmark — choose pymupdf (speed + get_toc() fidelity)"
@@ -172,7 +172,7 @@ git commit --allow-empty -m "docs: PDF parser benchmark — choose pymupdf (spee
 - Create: `src/sleuth/backends/_localfiles/__init__.py`
 - Create: `src/sleuth/backends/_localfiles/models.py`
 
-- [ ] **Step 1: Write failing test for models**
+- [x] **Step 1: Write failing test for models**
 
 Create `tests/backends/conftest.py`:
 
@@ -289,7 +289,7 @@ class TestIndexNode:
         assert "Section 19" in toc
 ```
 
-- [ ] **Step 2: Run to confirm FAIL**
+- [x] **Step 2: Run to confirm FAIL**
 
 ```bash
 uv run pytest tests/backends/test_localfiles.py::TestIndexNode -v 2>&1 | head -30
@@ -297,14 +297,14 @@ uv run pytest tests/backends/test_localfiles.py::TestIndexNode -v 2>&1 | head -3
 
 Expected: `ImportError` — `sleuth.backends._localfiles.models` does not exist yet.
 
-- [ ] **Step 3: Create the `__init__.py` stub**
+- [x] **Step 3: Create the `__init__.py` stub**
 
 ```python
 # src/sleuth/backends/_localfiles/__init__.py
 """Internal helpers for the LocalFiles backend."""
 ```
 
-- [ ] **Step 4: Implement `models.py`**
+- [x] **Step 4: Implement `models.py`**
 
 ```python
 # src/sleuth/backends/_localfiles/models.py
@@ -412,7 +412,7 @@ class ParsedSection:
     page_or_line: int           # source location
 ```
 
-- [ ] **Step 5: Run tests — expect PASS**
+- [x] **Step 5: Run tests — expect PASS**
 
 ```bash
 uv run pytest tests/backends/test_localfiles.py::TestIndexNode -v
@@ -420,7 +420,7 @@ uv run pytest tests/backends/test_localfiles.py::TestIndexNode -v
 
 Expected: 4 tests pass.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add src/sleuth/backends/_localfiles/ tests/backends/
@@ -435,7 +435,7 @@ git commit -m "feat: add IndexNode, IndexTree, ParsedDoc internal models"
 - Create: `src/sleuth/backends/_localfiles/parsers.py`
 - Test: `tests/backends/test_localfiles.py` (add `TestParsers` class)
 
-- [ ] **Step 1: Write failing tests for parsers**
+- [x] **Step 1: Write failing tests for parsers**
 
 Append to `tests/backends/test_localfiles.py`:
 
@@ -613,7 +613,7 @@ class TestCodeParser:
         assert any("Greeter" in h for h in headings)
 ```
 
-- [ ] **Step 2: Run to confirm FAIL**
+- [x] **Step 2: Run to confirm FAIL**
 
 ```bash
 uv run pytest tests/backends/test_localfiles.py -k "TestMarkdownParser or TestHtmlParser or TestPdfParser or TestCodeParser" -v 2>&1 | head -20
@@ -621,7 +621,7 @@ uv run pytest tests/backends/test_localfiles.py -k "TestMarkdownParser or TestHt
 
 Expected: `ImportError` — `parsers` module does not exist.
 
-- [ ] **Step 3: Implement `parsers.py`**
+- [x] **Step 3: Implement `parsers.py`**
 
 ```python
 # src/sleuth/backends/_localfiles/parsers.py
@@ -957,7 +957,7 @@ def get_parser(path: str) -> Parser:
     return MarkdownParser()
 ```
 
-- [ ] **Step 4: Fix the typo in the test (backtick paren)**
+- [x] **Step 4: Fix the typo in the test (backtick paren)**
 
 In the test file, find:
 ```python
@@ -968,7 +968,7 @@ and correct to:
         md = tmp_path / "flat.md"
 ```
 
-- [ ] **Step 5: Run tests**
+- [x] **Step 5: Run tests**
 
 ```bash
 uv run pytest tests/backends/test_localfiles.py -k "TestMarkdownParser or TestHtmlParser or TestPdfParser or TestCodeParser" -v
@@ -976,7 +976,7 @@ uv run pytest tests/backends/test_localfiles.py -k "TestMarkdownParser or TestHt
 
 Expected: all tests pass.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add src/sleuth/backends/_localfiles/parsers.py tests/backends/test_localfiles.py tests/backends/conftest.py
@@ -991,7 +991,7 @@ git commit -m "feat: add format parsers (markdown, HTML, PDF via pymupdf, code v
 - Create: `src/sleuth/backends/_localfiles/hasher.py`
 - Test: `tests/backends/test_localfiles.py` (add `TestHasher`)
 
-- [ ] **Step 1: Write failing tests**
+- [x] **Step 1: Write failing tests**
 
 Append to `tests/backends/test_localfiles.py`:
 
@@ -1029,7 +1029,7 @@ class TestHasher:
         assert len(v1) == 16  # short hex string
 ```
 
-- [ ] **Step 2: Run to confirm FAIL**
+- [x] **Step 2: Run to confirm FAIL**
 
 ```bash
 uv run pytest tests/backends/test_localfiles.py::TestHasher -v 2>&1 | head -10
@@ -1037,7 +1037,7 @@ uv run pytest tests/backends/test_localfiles.py::TestHasher -v 2>&1 | head -10
 
 Expected: `ImportError` — `hasher` does not exist.
 
-- [ ] **Step 3: Implement `hasher.py`**
+- [x] **Step 3: Implement `hasher.py`**
 
 ```python
 # src/sleuth/backends/_localfiles/hasher.py
@@ -1102,7 +1102,7 @@ def corpus_version(
     return hashlib.md5(combined.encode()).hexdigest()[:16]
 ```
 
-- [ ] **Step 4: Run tests**
+- [x] **Step 4: Run tests**
 
 ```bash
 uv run pytest tests/backends/test_localfiles.py::TestHasher -v
@@ -1110,7 +1110,7 @@ uv run pytest tests/backends/test_localfiles.py::TestHasher -v
 
 Expected: 3 tests pass.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add src/sleuth/backends/_localfiles/hasher.py tests/backends/test_localfiles.py
@@ -1125,7 +1125,7 @@ git commit -m "feat: add file hasher (mtime/content/always) for corpus change de
 - Create: `src/sleuth/backends/_localfiles/tree_builder.py`
 - Test: `tests/backends/test_localfiles.py` (add `TestTreeBuilder`)
 
-- [ ] **Step 1: Write failing tests**
+- [x] **Step 1: Write failing tests**
 
 Append to `tests/backends/test_localfiles.py`:
 
@@ -1183,7 +1183,7 @@ class TestTreeBuilder:
             assert leaf.source_section
 ```
 
-- [ ] **Step 2: Run to confirm FAIL**
+- [x] **Step 2: Run to confirm FAIL**
 
 ```bash
 uv run pytest tests/backends/test_localfiles.py::TestTreeBuilder -v 2>&1 | head -15
@@ -1191,7 +1191,7 @@ uv run pytest tests/backends/test_localfiles.py::TestTreeBuilder -v 2>&1 | head 
 
 Expected: `ImportError` — `tree_builder` does not exist.
 
-- [ ] **Step 3: Implement `tree_builder.py`**
+- [x] **Step 3: Implement `tree_builder.py`**
 
 ```python
 # src/sleuth/backends/_localfiles/tree_builder.py
@@ -1319,7 +1319,7 @@ async def build_tree(
     return IndexTree(corpus_path=corpus_path, version=version, nodes=root_nodes)
 ```
 
-- [ ] **Step 4: Run tests**
+- [x] **Step 4: Run tests**
 
 ```bash
 uv run pytest tests/backends/test_localfiles.py::TestTreeBuilder -v
@@ -1327,7 +1327,7 @@ uv run pytest tests/backends/test_localfiles.py::TestTreeBuilder -v
 
 Expected: all 3 tests pass.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add src/sleuth/backends/_localfiles/tree_builder.py tests/backends/test_localfiles.py
@@ -1342,7 +1342,7 @@ git commit -m "feat: add tree builder with bottom-up LLM summarization"
 - Create: `src/sleuth/backends/_localfiles/persistence.py`
 - Test: `tests/backends/test_localfiles.py` (add `TestPersistence`)
 
-- [ ] **Step 1: Write failing tests**
+- [x] **Step 1: Write failing tests**
 
 Append to `tests/backends/test_localfiles.py`:
 
@@ -1414,7 +1414,7 @@ class TestPersistence:
         assert loaded.nodes[0].title == "Second"
 ```
 
-- [ ] **Step 2: Run to confirm FAIL**
+- [x] **Step 2: Run to confirm FAIL**
 
 ```bash
 uv run pytest tests/backends/test_localfiles.py::TestPersistence -v 2>&1 | head -10
@@ -1422,7 +1422,7 @@ uv run pytest tests/backends/test_localfiles.py::TestPersistence -v 2>&1 | head 
 
 Expected: `ImportError` — `persistence` does not exist.
 
-- [ ] **Step 3: Implement `persistence.py`**
+- [x] **Step 3: Implement `persistence.py`**
 
 ```python
 # src/sleuth/backends/_localfiles/persistence.py
@@ -1531,7 +1531,7 @@ def prune_stale(index_dir: str, keep_version: str) -> int:
     return count
 ```
 
-- [ ] **Step 4: Run tests**
+- [x] **Step 4: Run tests**
 
 ```bash
 uv run pytest tests/backends/test_localfiles.py::TestPersistence -v
@@ -1539,7 +1539,7 @@ uv run pytest tests/backends/test_localfiles.py::TestPersistence -v
 
 Expected: all 3 tests pass.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add src/sleuth/backends/_localfiles/persistence.py tests/backends/test_localfiles.py
@@ -1554,7 +1554,7 @@ git commit -m "feat: add JSON persistence for IndexTree under <corpus>/.sleuth/i
 - Create: `src/sleuth/backends/_localfiles/navigator.py`
 - Test: `tests/backends/test_localfiles.py` (add `TestNavigator`)
 
-- [ ] **Step 1: Write failing tests**
+- [x] **Step 1: Write failing tests**
 
 Append to `tests/backends/test_localfiles.py`:
 
@@ -1641,7 +1641,7 @@ class TestNavigator:
         assert len(chunks) > 0
 ```
 
-- [ ] **Step 2: Run to confirm FAIL**
+- [x] **Step 2: Run to confirm FAIL**
 
 ```bash
 uv run pytest tests/backends/test_localfiles.py::TestNavigator -v 2>&1 | head -10
@@ -1649,7 +1649,7 @@ uv run pytest tests/backends/test_localfiles.py::TestNavigator -v 2>&1 | head -1
 
 Expected: `ImportError` — `navigator` does not exist.
 
-- [ ] **Step 3: Implement `navigator.py`**
+- [x] **Step 3: Implement `navigator.py`**
 
 ```python
 # src/sleuth/backends/_localfiles/navigator.py
@@ -1774,7 +1774,7 @@ async def navigate(
     return [_node_to_chunk(leaf) for leaf in leaves[:k]]
 ```
 
-- [ ] **Step 4: Run tests**
+- [x] **Step 4: Run tests**
 
 ```bash
 uv run pytest tests/backends/test_localfiles.py::TestNavigator -v
@@ -1782,7 +1782,7 @@ uv run pytest tests/backends/test_localfiles.py::TestNavigator -v
 
 Expected: all 3 tests pass.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add src/sleuth/backends/_localfiles/navigator.py tests/backends/test_localfiles.py
@@ -1797,7 +1797,7 @@ git commit -m "feat: add LLM navigator for branch selection with JSON structured
 - Create: `src/sleuth/backends/localfiles.py`
 - Test: `tests/backends/test_localfiles.py` (add `TestLocalFiles` and `TestLocalFilesBackendKit`)
 
-- [ ] **Step 1: Write failing tests**
+- [x] **Step 1: Write failing tests**
 
 Append to `tests/backends/test_localfiles.py`:
 
@@ -1896,7 +1896,7 @@ class TestLocalFiles:
         assert not any("Node module content" in t for t in texts)
 ```
 
-- [ ] **Step 2: Run to confirm FAIL**
+- [x] **Step 2: Run to confirm FAIL**
 
 ```bash
 uv run pytest tests/backends/test_localfiles.py::TestLocalFiles -v 2>&1 | head -15
@@ -1904,7 +1904,7 @@ uv run pytest tests/backends/test_localfiles.py::TestLocalFiles -v 2>&1 | head -
 
 Expected: `ImportError` — `localfiles` module does not exist.
 
-- [ ] **Step 3: Implement `backends/localfiles.py`**
+- [x] **Step 3: Implement `backends/localfiles.py`**
 
 ```python
 # src/sleuth/backends/localfiles.py
@@ -2135,7 +2135,7 @@ class LocalFiles:
         return docs
 ```
 
-- [ ] **Step 4: Run tests**
+- [x] **Step 4: Run tests**
 
 ```bash
 uv run pytest tests/backends/test_localfiles.py::TestLocalFiles -v
@@ -2143,7 +2143,7 @@ uv run pytest tests/backends/test_localfiles.py::TestLocalFiles -v
 
 Expected: all 6 tests pass.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add src/sleuth/backends/localfiles.py tests/backends/test_localfiles.py
@@ -2159,7 +2159,7 @@ git commit -m "feat: implement LocalFiles backend (search, warm_index, _get_summ
 
 BackendTestKit is owned by Phase 1 (`tests/contract/test_backend_protocol.py`). This task runs `LocalFiles` through it.
 
-- [ ] **Step 1: Write the BackendTestKit compliance test**
+- [x] **Step 1: Write the BackendTestKit compliance test**
 
 Append to `tests/backends/test_localfiles.py`:
 
@@ -2182,7 +2182,7 @@ class TestLocalFilesProtocol(BackendTestKit):
         )
 ```
 
-- [ ] **Step 2: Run BackendTestKit compliance**
+- [x] **Step 2: Run BackendTestKit compliance**
 
 ```bash
 uv run pytest tests/backends/test_localfiles.py::TestLocalFilesProtocol -v
@@ -2190,7 +2190,7 @@ uv run pytest tests/backends/test_localfiles.py::TestLocalFilesProtocol -v
 
 Expected: all BackendTestKit cases pass (protocol compliance, error shapes, timeout behavior, cancellation safety).
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 git add tests/backends/test_localfiles.py
@@ -2206,7 +2206,7 @@ git commit -m "test: run LocalFiles through BackendTestKit protocol compliance s
 - Modify: `src/sleuth/backends/_localfiles/navigator.py` (fix any mypy findings)
 - Modify: `src/sleuth/backends/localfiles.py` (fix any mypy findings)
 
-- [ ] **Step 1: Run mypy**
+- [x] **Step 1: Run mypy**
 
 ```bash
 uv run mypy src/sleuth/backends/localfiles.py src/sleuth/backends/_localfiles/
@@ -2217,7 +2217,7 @@ Expected: resolve any `error:` lines. Common fixes:
   - Ensure `LLMClient | None` parameters have guards before use.
   - `IndexNode.children` default factory is already `field(default_factory=list)`.
 
-- [ ] **Step 2: Run ruff**
+- [x] **Step 2: Run ruff**
 
 ```bash
 uv run ruff check src/sleuth/backends/localfiles.py src/sleuth/backends/_localfiles/
@@ -2226,7 +2226,7 @@ uv run ruff format src/sleuth/backends/localfiles.py src/sleuth/backends/_localf
 
 Expected: clean (0 errors, files reformatted or already compliant).
 
-- [ ] **Step 3: Run full test suite to confirm nothing regressed**
+- [x] **Step 3: Run full test suite to confirm nothing regressed**
 
 ```bash
 uv run pytest tests/backends/ -v --tb=short
@@ -2234,7 +2234,7 @@ uv run pytest tests/backends/ -v --tb=short
 
 Expected: all tests pass.
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add src/sleuth/backends/
@@ -2248,7 +2248,7 @@ git commit -m "fix: resolve mypy and ruff findings in localfiles backend"
 **Files:**
 - No new files. Verify coverage gate passes.
 
-- [ ] **Step 1: Run coverage**
+- [x] **Step 1: Run coverage**
 
 ```bash
 uv run pytest tests/backends/ --cov=src/sleuth/backends/localfiles --cov=src/sleuth/backends/_localfiles --cov-report=term-missing
@@ -2263,7 +2263,7 @@ Common gaps to check:
   - `prune_stale` when index dir does not yet exist
   - `LocalFiles._collect_docs` file-parse exception swallowing
 
-- [ ] **Step 2: Add any missing coverage tests**
+- [x] **Step 2: Add any missing coverage tests**
 
 Example for the `CodeParser` unsupported extension branch:
 
@@ -2287,7 +2287,7 @@ def test_prune_stale_nonexistent_dir_returns_zero(self, tmp_path):
     assert count == 0
 ```
 
-- [ ] **Step 3: Run coverage again — must meet gate**
+- [x] **Step 3: Run coverage again — must meet gate**
 
 ```bash
 uv run pytest tests/backends/ --cov=src/sleuth/backends/localfiles --cov=src/sleuth/backends/_localfiles --cov-report=term-missing --cov-fail-under=85
@@ -2295,7 +2295,7 @@ uv run pytest tests/backends/ --cov=src/sleuth/backends/localfiles --cov=src/sle
 
 Expected: PASSED (coverage ≥85%).
 
-- [ ] **Step 4: Commit coverage additions**
+- [x] **Step 4: Commit coverage additions**
 
 ```bash
 git add tests/backends/test_localfiles.py
@@ -2336,7 +2336,7 @@ Depth mapping (from conventions §4 `Length`):
 - `"standard"` → root + level-1 children
 - `"thorough"` → full tree walk (all summaries concatenated)
 
-- [ ] **Step 1: No code step — read this task, confirm the signature matches conventions §4**
+- [x] **Step 1: No code step — read this task, confirm the signature matches conventions §4**
 
 Conventions §4 declares:
 ```python
@@ -2345,7 +2345,7 @@ def summarize(self, target: str, *, length: Length = "standard", ...) -> Result[
 
 `Length = Literal["brief", "standard", "thorough"]`. Our `_get_summary` accepts the same `length` values. Confirmed compatible.
 
-- [ ] **Step 2: Commit documentation note**
+- [x] **Step 2: Commit documentation note**
 
 ```bash
 git commit --allow-empty -m "docs: document LocalFiles._get_summary integration point for Phase 1 _agent.py"
@@ -2358,7 +2358,7 @@ git commit --allow-empty -m "docs: document LocalFiles._get_summary integration 
 **Files:**
 - Modify: none (cleanup pass)
 
-- [ ] **Step 1: Run full test suite**
+- [x] **Step 1: Run full test suite**
 
 ```bash
 uv run pytest tests/ -m "not integration" -v --tb=short
@@ -2366,7 +2366,7 @@ uv run pytest tests/ -m "not integration" -v --tb=short
 
 Expected: all unit tests pass.
 
-- [ ] **Step 2: Run ruff on entire src**
+- [x] **Step 2: Run ruff on entire src**
 
 ```bash
 uv run ruff check src/ && uv run ruff format --check src/
@@ -2374,7 +2374,7 @@ uv run ruff check src/ && uv run ruff format --check src/
 
 Expected: 0 errors.
 
-- [ ] **Step 3: Run mypy on entire package**
+- [x] **Step 3: Run mypy on entire package**
 
 ```bash
 uv run mypy src/sleuth/
@@ -2382,7 +2382,7 @@ uv run mypy src/sleuth/
 
 Expected: 0 errors (or only pre-existing errors from other phases, none from `backends/localfiles.py` or `backends/_localfiles/`).
 
-- [ ] **Step 4: Verify index dir exclusion in git**
+- [x] **Step 4: Verify index dir exclusion in git**
 
 ```bash
 grep -r "\.sleuth" .gitignore
@@ -2396,7 +2396,7 @@ git add .gitignore
 git commit -m "chore: ensure .sleuth/ index dirs are git-ignored"
 ```
 
-- [ ] **Step 5: Create PR**
+- [x] **Step 5: Create PR**
 
 ```bash
 git push -u origin feature/phase-2-localfiles

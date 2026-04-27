@@ -124,8 +124,10 @@ dev = [
     { name = "mypy" },
     { name = "numpy" },
     { name = "openai" },
+    { name = "pathspec" },
     { name = "pip-audit" },
     { name = "pre-commit" },
+    { name = "pymupdf" },
     { name = "pytest" },
     { name = "pytest-asyncio" },
     { name = "pytest-benchmark" },
@@ -136,6 +138,11 @@ dev = [
     { name = "syrupy" },
     { name = "tiktoken" },
     { name = "trafilatura" },
+    { name = "tree-sitter" },
+    { name = "tree-sitter-javascript" },
+    { name = "tree-sitter-python" },
+    { name = "tree-sitter-typescript" },
+    { name = "xxhash" },
 ]
 
 [package.metadata]
@@ -190,8 +197,10 @@ dev = [
     { name = "mypy", specifier = ">=1.11" },
     { name = "numpy", specifier = ">=1.26" },
     { name = "openai", specifier = ">=2.32.0" },
+    { name = "pathspec", specifier = ">=0.12" },
     { name = "pip-audit", specifier = ">=2.7" },
     { name = "pre-commit", specifier = ">=3.7" },
+    { name = "pymupdf", specifier = ">=1.24" },
     { name = "pytest", specifier = ">=8.0" },
     { name = "pytest-asyncio", specifier = ">=0.23" },
     { name = "pytest-benchmark", specifier = ">=4.0" },
@@ -202,6 +211,11 @@ dev = [
     { name = "syrupy", specifier = ">=4.6" },
     { name = "tiktoken", specifier = ">=0.7" },
     { name = "trafilatura", specifier = ">=1.7" },
+    { name = "tree-sitter", specifier = ">=0.23" },
+    { name = "tree-sitter-javascript", specifier = ">=0.23" },
+    { name = "tree-sitter-python", specifier = ">=0.23" },
+    { name = "tree-sitter-typescript", specifier = ">=0.23" },
+    { name = "xxhash", specifier = ">=3.4" },
 ]
 
 [[package]]

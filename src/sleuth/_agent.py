@@ -15,6 +15,7 @@ Design notes (per spec §4):
 from __future__ import annotations
 
 import asyncio
+import pathlib
 import time
 from collections.abc import AsyncIterator
 from typing import Literal, TypeVar
@@ -25,7 +26,7 @@ from sleuth.backends.base import Backend
 from sleuth.engine.executor import Executor
 from sleuth.engine.router import Router
 from sleuth.engine.synthesizer import Synthesizer
-from sleuth.events import Event
+from sleuth.events import DoneEvent, Event, TokenEvent
 from sleuth.llm.base import LLMClient
 from sleuth.memory.cache import Cache, SqliteCache
 from sleuth.memory.semantic import SemanticCache
@@ -174,7 +175,41 @@ class Sleuth:
         length: Length = "standard",
         schema: type[BaseModel] | None = None,
     ) -> AsyncIterator[Event]:
-        """Summarize a URL, file path, or topic.  Placeholder — full impl in Phase 2+."""
+        """Summarize a URL, file path, or topic.
+
+        Phase 2 extension: when ``target`` is an existing file path AND a
+        ``LocalFiles`` backend is configured, delegate to
+        ``LocalFiles._get_summary(target, length)`` and emit the result as
+        ``TokenEvent`` + ``DoneEvent`` rather than running the full engine.
+        """
+        # Route file-path targets through LocalFiles._get_summary when available.
+        _target_path = pathlib.Path(target)
+        target_exists = await asyncio.to_thread(_target_path.exists)
+        if target_exists:
+            for backend in self._backends:
+                if hasattr(backend, "_get_summary"):
+                    import time as _time
+
+                    start_ms = _time.monotonic() * 1000
+                    summary_text: str = await backend._get_summary(target, length=length)
+                    for token in summary_text.split(" "):
+                        yield TokenEvent(type="token", text=token + " ")
+                    elapsed = int((_time.monotonic() * 1000) - start_ms)
+                    from sleuth.types import RunStats
+
+                    yield DoneEvent(
+                        type="done",
+                        stats=RunStats(
+                            latency_ms=elapsed,
+                            first_token_ms=elapsed,
+                            tokens_in=0,
+                            tokens_out=len(summary_text.split()),
+                            cache_hits={},
+                            backends_called=[backend.name],
+                        ),
+                    )
+                    return
+        # Fallback: run the full engine with a summarize query.
         async for event in self.aask(
             f"summarize: {target} (length={length})", depth="fast", schema=schema
         ):
@@ -191,7 +226,13 @@ class Sleuth:
         return asyncio.run(self._collect_summarize(target=target, length=length, schema=schema))
 
     async def warm_index(self) -> None:
-        """Eagerly index all LocalFiles backends.  No-op in Phase 1 (no LocalFiles yet)."""
+        """Eagerly index all LocalFiles backends.
+
+        Phase 2: calls ``warm_index()`` on every backend that supports it.
+        """
+        for backend in self._backends:
+            if hasattr(backend, "warm_index"):
+                await backend.warm_index()
 
     # ------------------------------------------------------------------
     # Internal helpers
