@@ -135,8 +135,9 @@ module = [
     "tree_sitter_python",
     "tree_sitter_javascript",
     "tree_sitter_typescript",
-    # Phase 8: MCP SDK (no type stubs)
+    # Phase 8: MCP SDK and uvicorn (no type stubs in pre-commit env)
     "mcp", "mcp.*",
+    "uvicorn", "uvicorn.*",
 ]
 ignore_missing_imports = true
 
