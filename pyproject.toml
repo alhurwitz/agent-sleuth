@@ -116,6 +116,7 @@ mypy_path = "src"
 module = "tests.*"
 disallow_untyped_defs = false
 ignore_missing_imports = true
+disable_error_code = ["type-arg", "misc", "unused-ignore"]
 
 [[tool.mypy.overrides]]
 module = [
@@ -135,8 +136,40 @@ module = [
     "tree_sitter_python",
     "tree_sitter_javascript",
     "tree_sitter_typescript",
+    # Phase 7: Framework adapter deps (no type stubs available)
+    "langchain_core", "langchain_core.*",
+    "langgraph", "langgraph.*",
+    "llama_index", "llama_index.*",
+    "agents", "agents.*",
+    "claude_agent_sdk", "claude_agent_sdk.*",
+    "pydantic_ai", "pydantic_ai.*",
+    "crewai", "crewai.*",
+    "autogen_agentchat", "autogen_agentchat.*",
 ]
 ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = [
+    "sleuth.langchain",
+    "sleuth.langchain.*",
+    "sleuth.langgraph",
+    "sleuth.langgraph.*",
+    "sleuth.llamaindex",
+    "sleuth.llamaindex.*",
+    "sleuth.openai_agents",
+    "sleuth.openai_agents.*",
+    "sleuth.claude_agent",
+    "sleuth.claude_agent.*",
+    "sleuth.pydantic_ai",
+    "sleuth.pydantic_ai.*",
+    "sleuth.crewai",
+    "sleuth.crewai.*",
+    "sleuth.autogen",
+    "sleuth.autogen.*",
+]
+# Framework adapters subclass from externally-typed bases that lack stubs;
+# misc/unused-ignore suppressed because import resolution differs by env.
+disable_error_code = ["misc", "unused-ignore"]
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
