@@ -8,6 +8,11 @@ Phase 3 extensions:
   - Multi-query fan-out via ``execute_subqueries``
   - Speculative prefetch via ``execute_with_prefetch``
   - Reflect loop via ``reflect_loop``
+
+Phase 11 additions:
+  - ``DEFAULT_TIMEOUTS`` — per-Capability default budgets (8s web, 4s local).
+  - ``_resolve_timeout`` — duck-typed ``backend.timeout_s`` wins over default.
+  - ``run_backends`` — free-function API used by the benchmark suite.
 """
 
 from __future__ import annotations
@@ -17,8 +22,8 @@ import logging
 from collections.abc import AsyncIterator, Callable
 from typing import TYPE_CHECKING, Any
 
-from sleuth.backends.base import Backend
-from sleuth.errors import BackendError
+from sleuth.backends.base import Backend, Capability
+from sleuth.errors import BackendError, BackendTimeoutError
 from sleuth.events import SearchEvent
 from sleuth.types import Chunk
 
@@ -27,6 +32,137 @@ if TYPE_CHECKING:
     from sleuth.events import PlanStep
 
 logger = logging.getLogger("sleuth.engine.executor")
+
+# ---------------------------------------------------------------------------
+# Phase 11: Per-capability default timeout budgets
+# ---------------------------------------------------------------------------
+
+#: Default timeout (seconds) per backend Capability.
+#:
+#: Web / fresh backends are given 8 s because they make external HTTP calls.
+#: Local / code / private backends are given 4 s because they run on-disk.
+#: These are loose enough that no Phase 1-10 test fires them with StubLLM.
+DEFAULT_TIMEOUTS: dict[Capability, float] = {
+    Capability.WEB: 8.0,
+    Capability.DOCS: 4.0,
+    Capability.CODE: 4.0,
+    Capability.FRESH: 8.0,
+    Capability.PRIVATE: 4.0,
+}
+
+
+def _resolve_timeout(backend: Backend, default_timeouts: dict[Capability, float]) -> float:
+    """Return the effective timeout for *backend*.
+
+    Priority:
+      1. ``backend.timeout_s`` attribute (duck-typed; not in the frozen Backend protocol).
+      2. ``default_timeouts`` keyed by the backend's first (primary) Capability.
+      3. 8.0 s as the hard fallback.
+
+    Using ``getattr`` keeps existing backends protocol-compliant without modification
+    (per reconciliation note: Backend protocol has no ``timeout_s`` field).
+    """
+    explicit = getattr(backend, "timeout_s", None)
+    if explicit is not None:
+        return float(explicit)
+    for cap in backend.capabilities:
+        if cap in default_timeouts:
+            return default_timeouts[cap]
+    return 8.0
+
+
+async def _call_with_timeout(
+    backend: Backend,
+    query: str,
+    k: int,
+    timeout_s: float,
+    event_sink: Callable[[SearchEvent], None] | None,
+) -> list[Chunk]:
+    """Call backend.search with a per-backend timeout.
+
+    On ``asyncio.TimeoutError`` → wraps in ``BackendTimeoutError`` → emits
+    ``SearchEvent(error=...)`` and returns ``[]``.
+
+    On any other ``BackendError`` → same treatment (consistent with spec §7.1).
+    """
+    _sink = event_sink or (lambda _: None)
+    _sink(SearchEvent(type="search", backend=backend.name, query=query))
+    try:
+        return await asyncio.wait_for(backend.search(query, k), timeout=timeout_s)
+    except TimeoutError:
+        err = BackendTimeoutError(f"Backend '{backend.name}' timed out after {timeout_s:.1f}s")
+        logger.warning("%s", err)
+        _sink(
+            SearchEvent(
+                type="search",
+                backend=backend.name,
+                query=query,
+                error=str(err),
+            )
+        )
+        return []
+    except BackendError as exc:
+        logger.warning("Backend %s error: %s", backend.name, exc)
+        _sink(
+            SearchEvent(
+                type="search",
+                backend=backend.name,
+                query=query,
+                error=str(exc),
+            )
+        )
+        return []
+
+
+async def run_backends(
+    backends: list[Backend],
+    query: str,
+    k: int = 10,
+    *,
+    default_timeouts: dict[Capability, float] | None = None,
+    event_sink: Callable[[SearchEvent], None] | None = None,
+) -> list[Chunk]:
+    """Fan out *query* to all *backends* in parallel with per-backend timeouts.
+
+    Returns the merged (deduplicated by source location) list of Chunks from
+    all backends that responded within their timeout.
+
+    This is the Phase 11 free-function API used by the benchmark suite.  The
+    ``Executor`` class (above) continues to serve the engine's internal use.
+
+    Args:
+        backends: List of Backend instances to query.
+        query: The search query string.
+        k: Number of results requested from each backend.
+        default_timeouts: Timeout (seconds) per Capability; falls back to
+            ``DEFAULT_TIMEOUTS`` when not supplied.
+        event_sink: Optional callable that receives ``SearchEvent`` objects.
+            A single ``SearchEvent`` is emitted per backend call (success) plus
+            an extra one on error.
+    """
+    timeouts = default_timeouts if default_timeouts is not None else DEFAULT_TIMEOUTS
+    tasks = [
+        _call_with_timeout(
+            backend=b,
+            query=query,
+            k=k,
+            timeout_s=_resolve_timeout(b, timeouts),
+            event_sink=event_sink,
+        )
+        for b in backends
+    ]
+    results: list[list[Chunk]] = await asyncio.gather(*tasks)
+
+    # Deduplicate by source.location; preserve insertion order (first wins).
+    seen: set[str] = set()
+    merged: list[Chunk] = []
+    for chunk_list in results:
+        for chunk in chunk_list:
+            loc = chunk.source.location
+            if loc not in seen:
+                seen.add(loc)
+                merged.append(chunk)
+    return merged
 
 
 class Executor:
