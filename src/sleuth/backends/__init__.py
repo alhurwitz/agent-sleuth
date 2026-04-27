@@ -1,3 +1,4 @@
+from sleuth.backends.codesearch import CodeSearch
 from sleuth.backends.web import BraveBackend as BraveBackend
 from sleuth.backends.web import ExaBackend as ExaBackend
 from sleuth.backends.web import SerpAPIBackend as SerpAPIBackend
@@ -7,6 +8,7 @@ from sleuth.backends.web import WebBackend as WebBackend
 
 __all__ = [
     "BraveBackend",
+    "CodeSearch",
     "ExaBackend",
     "SerpAPIBackend",
     "Tavily",

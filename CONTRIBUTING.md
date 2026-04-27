@@ -147,3 +147,16 @@ The following steps cannot be automated — a human with repo admin rights must 
 
 - [ ] On GitHub → Settings → General → Allow auto-merge: Enable ✓
 - [ ] Create a Dependabot auto-merge GitHub Actions workflow (or use the merge queue) to auto-approve and merge Dependabot PRs with only patch-level version bumps after CI passes.
+
+## CodeSearch prerequisites
+
+The `CodeSearch` backend shells out to [`ripgrep`](https://github.com/BurntSushi/ripgrep) (`rg`). Install it before running code-search-related tests or using the backend:
+
+| Platform | Command |
+|---|---|
+| macOS (Homebrew) | `brew install ripgrep` |
+| Ubuntu/Debian | `sudo apt-get install ripgrep` |
+| Windows (winget) | `winget install BurntSushi.ripgrep.MSVC` |
+| Cargo | `cargo install ripgrep` |
+
+Verify with: `rg --version`
