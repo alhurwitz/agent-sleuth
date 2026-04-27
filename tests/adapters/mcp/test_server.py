@@ -316,3 +316,94 @@ async def test_summarize_result_structure() -> None:
     parsed = json.loads(json.dumps(result))
     assert parsed["type"] == "result"
     assert parsed["text"] == "summary text"
+
+
+# ---------------------------------------------------------------------------
+# Additional event type coverage
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.unit
+async def test_events_to_notifications_thinking_event() -> None:
+    from sleuth.events import ThinkingEvent
+
+    ev = ThinkingEvent(type="thinking", text="reasoning...")
+    notes = [n async for n in events_to_notifications([ev])]
+    assert len(notes) == 1
+    assert notes[0]["type"] == "progress"
+    assert "thinking" in notes[0]["message"]
+
+
+@pytest.mark.unit
+async def test_events_to_notifications_citation_event() -> None:
+    from sleuth.events import CitationEvent
+
+    ev = CitationEvent(
+        type="citation",
+        index=1,
+        source=Source(kind="url", location="https://example.com", title="Ex"),
+    )
+    notes = [n async for n in events_to_notifications([ev])]
+    assert len(notes) == 1
+    assert notes[0]["type"] == "progress"
+    assert "example.com" in notes[0]["message"]
+
+
+@pytest.mark.unit
+async def test_events_to_notifications_cache_hit_event() -> None:
+    from sleuth.events import CacheHitEvent
+
+    ev = CacheHitEvent(type="cache_hit", kind="query", key="abc123")
+    notes = [n async for n in events_to_notifications([ev])]
+    assert len(notes) == 1
+    assert notes[0]["type"] == "progress"
+    assert "cache_hit" in notes[0]["message"]
+
+
+@pytest.mark.unit
+async def test_events_to_notifications_plan_event() -> None:
+    from sleuth.events import PlanEvent, PlanStep
+
+    ev = PlanEvent(
+        type="plan",
+        steps=[PlanStep(query="sub-query 1"), PlanStep(query="sub-query 2")],
+    )
+    notes = [n async for n in events_to_notifications([ev])]
+    assert len(notes) == 1
+    assert "2" in notes[0]["message"]
+
+
+@pytest.mark.unit
+async def test_events_to_notifications_async_iterator_input() -> None:
+    """events_to_notifications accepts an AsyncIterator, not just a list."""
+
+    async def _gen() -> Any:
+        yield RouteEvent(type="route", depth="fast", reason="async iter test")
+
+    notes = [n async for n in events_to_notifications(_gen())]
+    assert len(notes) == 1
+    assert notes[0]["type"] == "progress"
+
+
+@pytest.mark.unit
+async def test_search_result_with_data() -> None:
+    """Result with data.model_dump() included in MCP output."""
+    from pydantic import BaseModel
+
+    class MyData(BaseModel):
+        answer: str
+
+    mock_sleuth = MagicMock()
+    result_with_data: Result[MyData] = Result(
+        text="structured answer",
+        citations=[],
+        data=MyData(answer="42"),
+        stats=_make_stats(),
+    )
+    mock_sleuth.ask = MagicMock(return_value=result_with_data)
+    server = SleuthMcpServer(sleuth=mock_sleuth)
+    result = await server.call_tool("search", {"query": "structured"})
+
+    assert result["type"] == "result"
+    assert "data" in result
+    assert result["data"]["answer"] == "42"
