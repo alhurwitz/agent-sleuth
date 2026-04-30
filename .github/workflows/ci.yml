@@ -73,9 +73,6 @@ jobs:
       # --skip-editable so pip-audit doesn't try to look up agent-sleuth itself
       # on PyPI before the first release.
       # --ignore-vuln GHSA-58qw-9mgm-455v: pip <=26.0.1 zip/tar interpretation
-      # conflict (CVE-2026-3219); no patched version available yet. Revisit
-      # when pip ships a fix and update / drop this ignore.
-      # Ignored vulns:
-      # - GHSA-58qw-9mgm-455v: pip <=26.0.1 zip/tar interpretation, no patched pip yet.
-      # - GHSA-2jrp-274c-jhv3: pydantic-ai <=0.8.x; fixed in 1.56.0 — bump the extra pin and drop this in a follow-up.
-      - run: uv run pip-audit --skip-editable --ignore-vuln GHSA-58qw-9mgm-455v --ignore-vuln GHSA-2jrp-274c-jhv3
+      # conflict (CVE-2026-3219); no patched version available yet. Drop when
+      # pip ships a fix.
+      - run: uv run pip-audit --skip-editable --ignore-vuln GHSA-58qw-9mgm-455v
