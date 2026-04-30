@@ -9,6 +9,9 @@ repos:
     rev: v5.0.0
     hooks:
       - id: check-yaml
+        # MkDocs Material uses Python-tagged YAML (!!python/name:...) which is
+        # safe in this controlled config but not safe-loadable by check-yaml.
+        args: [--unsafe]
       - id: check-toml
       - id: check-merge-conflict
       - id: end-of-file-fixer

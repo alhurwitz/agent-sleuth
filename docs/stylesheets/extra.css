@@ -1,0 +1,57 @@
+/* agent-sleuth — Material theme overrides */
+
+/* Slightly tighter heading line-height + a touch more weight on h2 */
+.md-typeset h1 {
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+.md-typeset h2 {
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  margin-top: 2.4em;
+}
+.md-typeset h3 {
+  margin-top: 1.6em;
+}
+
+/* Inline code: a touch more contrast */
+.md-typeset code {
+  font-size: 0.85em;
+  padding: 0 0.35em;
+  border-radius: 4px;
+}
+
+/* Wider content area on big screens */
+@media screen and (min-width: 76.25em) {
+  .md-grid {
+    max-width: 72rem;
+  }
+}
+
+/* Cleaner blockquotes */
+.md-typeset blockquote {
+  border-left: 0.2rem solid var(--md-accent-fg-color);
+  background: var(--md-default-fg-color--lightest);
+  padding: 0.6em 1em;
+}
+
+/* Tighten admonition spacing */
+.md-typeset .admonition,
+.md-typeset details {
+  font-size: 0.78rem;
+}
+
+/* Footer brand */
+.md-footer-meta {
+  background: var(--md-default-bg-color);
+  border-top: 1px solid var(--md-default-fg-color--lightest);
+}
+
+/* Hide dotted underline on abbr inside headings */
+.md-typeset h1 abbr,
+.md-typeset h2 abbr,
+.md-typeset h3 abbr,
+.md-typeset h4 abbr {
+  text-decoration: none;
+  border-bottom: none;
+}

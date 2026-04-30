@@ -1,0 +1,65 @@
+# .github/workflows/docs.yml
+# Builds the MkDocs site and deploys to GitHub Pages on push to develop.
+# A PR build also runs (without deploy) so docs regressions block merges.
+
+name: Docs
+
+on:
+  push:
+    branches: [develop, main]
+  pull_request:
+    branches: [develop, main]
+    paths:
+      - "docs/**"
+      - "mkdocs.yml"
+      - "src/**/*.py"      # mkdocstrings reads docstrings
+      - "README.md"
+      - ".github/workflows/docs.yml"
+      - "pyproject.toml"
+      - "uv.lock"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Allow only one concurrent deployment, skip queued runs in between.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    name: Build site
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0   # mkdocs-git-revision-date plugin needs full history
+      - uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+      - name: Install docs + library deps
+        # mkdocstrings imports the package to render API docs, so we need
+        # the project + at least the framework deps so submodules import cleanly.
+        run: uv sync --frozen --all-extras --group docs
+      - name: Build MkDocs site
+        run: uv run mkdocs build --strict --site-dir _site
+      - name: Upload site artifact
+        if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+
+  deploy:
+    name: Deploy to GitHub Pages
+    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
