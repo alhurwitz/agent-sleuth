@@ -1,0 +1,176 @@
+site_name: agent-sleuth
+site_description: Plug-and-play agentic search with reasoning, planning, citations, and observability.
+site_url: https://alhurwitz.github.io/agent-sleuth/
+repo_url: https://github.com/alhurwitz/agent-sleuth
+repo_name: alhurwitz/agent-sleuth
+edit_uri: edit/develop/docs/
+copyright: Copyright &copy; 2026 agent-sleuth maintainers
+
+theme:
+  name: material
+  language: en
+  features:
+    - navigation.instant
+    - navigation.tracking
+    - navigation.tabs
+    - navigation.tabs.sticky
+    - navigation.sections
+    - navigation.expand
+    - navigation.indexes
+    - navigation.top
+    - navigation.footer
+    - toc.follow
+    - search.suggest
+    - search.highlight
+    - search.share
+    - content.code.copy
+    - content.code.annotate
+    - content.tabs.link
+    - content.tooltips
+    - content.action.edit
+  palette:
+    - media: "(prefers-color-scheme)"
+      toggle:
+        icon: material/brightness-auto
+        name: Switch to light mode
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: deep purple
+      accent: indigo
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: deep purple
+      accent: indigo
+      toggle:
+        icon: material/brightness-4
+        name: Switch to system preference
+  font:
+    text: Inter
+    code: JetBrains Mono
+  icon:
+    repo: fontawesome/brands/github
+    edit: material/pencil
+    view: material/eye
+  logo: assets/logo.svg
+  favicon: assets/favicon.svg
+
+plugins:
+  - search
+  - mkdocstrings:
+      default_handler: python
+      handlers:
+        python:
+          paths: [src]
+          options:
+            docstring_style: google
+            show_source: true
+            show_root_heading: true
+            show_root_full_path: false
+            show_signature_annotations: true
+            separate_signature: true
+            line_length: 88
+            merge_init_into_class: true
+            members_order: source
+            filters: ["!^_"]
+  - include-markdown
+  - git-revision-date-localized:
+      type: timeago
+      enable_creation_date: false
+      fallback_to_build_date: true
+
+markdown_extensions:
+  - abbr
+  - admonition
+  - attr_list
+  - def_list
+  - footnotes
+  - md_in_html
+  - tables
+  - toc:
+      permalink: true
+      title: On this page
+  - pymdownx.arithmatex:
+      generic: true
+  - pymdownx.betterem
+  - pymdownx.caret
+  - pymdownx.details
+  - pymdownx.emoji:
+      emoji_index: !!python/name:material.extensions.emoji.twemoji
+      emoji_generator: !!python/name:material.extensions.emoji.to_svg
+  - pymdownx.highlight:
+      anchor_linenums: true
+      line_spans: __span
+      pygments_lang_class: true
+  - pymdownx.inlinehilite
+  - pymdownx.keys
+  - pymdownx.mark
+  - pymdownx.smartsymbols
+  - pymdownx.snippets:
+      check_paths: true
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
+  - pymdownx.tabbed:
+      alternate_style: true
+      slugify: !!python/object/apply:pymdownx.slugs.slugify
+        kwds:
+          case: lower
+  - pymdownx.tasklist:
+      custom_checkbox: true
+  - pymdownx.tilde
+
+extra:
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/alhurwitz/agent-sleuth
+    - icon: fontawesome/brands/python
+      link: https://pypi.org/project/agent-sleuth/
+  generator: false
+
+extra_css:
+  - stylesheets/extra.css
+
+nav:
+  - Home: index.md
+  - Quickstart: quickstart.md
+  - Concepts:
+      - concepts/index.md
+      - Architecture: concepts/architecture.md
+      - Event stream: concepts/events.md
+      - BYOK & protocols: concepts/byok.md
+      - Caching & memory: concepts/caching.md
+  - Backends:
+      - backends/index.md
+      - Local files: backends/local-files.md
+      - Code search: backends/code-search.md
+      - Web providers: backends/web.md
+      - Vector stores: backends/vector-store.md
+      - Custom backends: backends/custom.md
+  - Adapters:
+      - adapters/index.md
+      - Python SDK: adapters/python.md
+      - Frameworks: adapters/frameworks.md
+      - MCP server: adapters/mcp.md
+  - Recipes:
+      - recipes/index.md
+      - Sessions & multi-turn: recipes/sessions.md
+      - Structured output: recipes/structured-output.md
+      - Deep mode: recipes/deep-mode.md
+      - Observability: recipes/observability.md
+  - API reference:
+      - reference/index.md
+      - Sleuth: reference/sleuth.md
+      - Events & types: reference/events-types.md
+      - Backends: reference/backends.md
+      - LLM clients: reference/llm.md
+      - Memory: reference/memory.md
+  - About:
+      - Contributing: about/contributing.md
+      - Release notes:
+          - v0.1.0: release-notes/v0.1.0.md
+      - Design spec: about/design-spec.md

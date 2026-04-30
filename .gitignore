@@ -228,3 +228,4 @@ __marimo__/
 
 # Sleuth runtime cache and per-dir hierarchical index
 .sleuth/
+_site/
