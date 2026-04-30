@@ -32,7 +32,9 @@ class FakeWebBackend:
 async def test_fast_path_event_stream_snapshot(snapshot):
     """Snapshot the complete event sequence for a fast-path Q&A."""
     stub = StubLLM([[TextDelta("Python was created by Guido van Rossum."), Stop("end_turn")]])
-    agent = Sleuth(llm=stub, backends=[FakeWebBackend()])
+    # cache=None so the snapshot is deterministic — default SqliteCache would
+    # turn this into a cache_hit on second run and break the snapshot.
+    agent = Sleuth(llm=stub, backends=[FakeWebBackend()], cache=None)
 
     events = []
     async for event in agent.aask("who created Python?", depth="fast"):

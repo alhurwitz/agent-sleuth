@@ -15,10 +15,11 @@ Design notes (per spec §4):
 from __future__ import annotations
 
 import asyncio
+import hashlib
 import pathlib
 import time
 from collections.abc import AsyncIterator
-from typing import Literal, TypeVar
+from typing import Any, Literal, TypeVar
 
 from pydantic import BaseModel
 
@@ -27,12 +28,18 @@ from sleuth.engine.executor import Executor, reflect_loop
 from sleuth.engine.planner import Planner
 from sleuth.engine.router import Router
 from sleuth.engine.synthesizer import Synthesizer
-from sleuth.events import DoneEvent, Event, TokenEvent
+from sleuth.events import (
+    CacheHitEvent,
+    CitationEvent,
+    DoneEvent,
+    Event,
+    TokenEvent,
+)
 from sleuth.llm.base import LLMClient
 from sleuth.memory.cache import Cache, SqliteCache
 from sleuth.memory.semantic import SemanticCache
 from sleuth.memory.session import Session
-from sleuth.types import Depth, Length, Result
+from sleuth.types import Depth, Length, Result, RunStats, Source
 
 T = TypeVar("T", bound=BaseModel)
 
@@ -128,7 +135,31 @@ class Sleuth:
         yield route_event
         resolved_depth = route_event.depth
 
-        # 2. Execute — deep mode uses Planner + reflect_loop; fast uses single fan-out
+        # 2. Cache lookup — query cache only, and only when no schema is requested.
+        # Schema results aren't currently round-trippable through JSON serialization
+        # so we skip the cache for those (consumers re-validate on miss).
+        cache_key = self._query_cache_key(query, resolved_depth) if schema is None else None
+        if cache_key is not None and self._cache is not None:
+            cached = await self._cache.get("query", cache_key)
+            if cached is not None:
+                async for event in self._replay_cache_hit(cached, cache_key, start_ms):
+                    yield event
+                if resolved_session is not None:
+                    citations = [Source(**src) for src in cached["citations"]]
+                    cached_stats = RunStats(**cached["stats"])
+                    # Reconstruct a minimal Result for the session ring buffer.
+                    # ``Result`` is generic over ``BaseModel``; cache hits never
+                    # carry typed ``data`` so we instantiate without a type arg.
+                    cached_result: Result[BaseModel] = Result(
+                        text=cached["text"],
+                        citations=citations,
+                        data=None,
+                        stats=cached_stats,
+                    )
+                    resolved_session.add_turn(query, cached_result, citations)
+                return
+
+        # 3. Execute — deep mode uses Planner + reflect_loop; fast uses single fan-out
         if resolved_depth == "deep":
             # Phase 3: deep mode — Planner decomposes query, reflect loop runs it
             planner = Planner(llm=self._fast_llm)
@@ -187,6 +218,63 @@ class Sleuth:
         # 4. Update session
         if resolved_session is not None and synth.last_result is not None:
             resolved_session.add_turn(query, synth.last_result, [c.source for c in chunks])
+
+        # 5. Cache write — persist the Result for future cache hits.
+        if cache_key is not None and self._cache is not None and synth.last_result is not None:
+            await self._cache.set(
+                "query",
+                cache_key,
+                {
+                    "text": synth.last_result.text,
+                    "citations": [s.model_dump(mode="json") for s in synth.last_result.citations],
+                    "stats": synth.last_result.stats.model_dump(mode="json"),
+                },
+            )
+
+    # ------------------------------------------------------------------
+    # Cache helpers
+    # ------------------------------------------------------------------
+
+    def _query_cache_key(self, query: str, depth: Depth) -> str:
+        """Derive a stable cache key from query, depth, and the backend set.
+
+        Spec §8 QueryCache: keyed on ``(query_hash, backend_set, depth)``.
+        """
+        backend_names = ",".join(sorted(b.name for b in self._backends))
+        h = hashlib.sha256()
+        h.update(query.encode("utf-8"))
+        h.update(b"\x00")
+        h.update(depth.encode("ascii"))
+        h.update(b"\x00")
+        h.update(backend_names.encode("utf-8"))
+        return h.hexdigest()
+
+    async def _replay_cache_hit(
+        self, cached: dict[str, Any], cache_key: str, start_ms: float
+    ) -> AsyncIterator[Event]:
+        """Replay a cached Result through the event stream per spec §8.
+
+        Emits ``CacheHitEvent -> TokenEvent -> CitationEvent xN -> DoneEvent`` so
+        consumers see the same shape as a live run.
+        """
+        yield CacheHitEvent(type="cache_hit", kind="query", key=cache_key)
+        yield TokenEvent(type="token", text=cached["text"])
+        for i, src_dict in enumerate(cached["citations"]):
+            yield CitationEvent(type="citation", index=i, source=Source(**src_dict))
+
+        # Stats: copy the original stats, mark as a hit, refresh latency_ms.
+        original_stats = RunStats(**cached["stats"])
+        elapsed_ms = int(time.monotonic() * 1000 - start_ms)
+        cache_hits = dict(original_stats.cache_hits)
+        cache_hits["query"] = cache_hits.get("query", 0) + 1
+        replayed = original_stats.model_copy(
+            update={
+                "latency_ms": elapsed_ms,
+                "first_token_ms": None,  # null on cache hit per spec §6
+                "cache_hits": cache_hits,
+            }
+        )
+        yield DoneEvent(type="done", stats=replayed)
 
     def ask(
         self,
